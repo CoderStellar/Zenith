@@ -352,4 +352,29 @@
     a.href = URL.createObjectURL(blob); a.download = "projection_" + m.k + "_" + m.s.toLowerCase() + ".csv"; document.body.appendChild(a); a.click(); a.remove();
   });
   drawAll();
+
+  /* ---- content rendered later (link tables, Try tab): table captions and chart labels ---- */
+  function nearestHeading(el) {
+    var card = el.closest("article, section, .card"), h = card && card.querySelector("h2, h3");
+    return h ? h.textContent.replace(/\s+/g, " ").trim() : "";
+  }
+  function fixA11y(root) {
+    Array.prototype.forEach.call(root.querySelectorAll("table:not(.dtable)"), function (t) {
+      if (!t.querySelector("caption")) {
+        var cap = document.createElement("caption"); cap.className = "sr-only"; cap.textContent = nearestHeading(t) || "Data table";
+        t.insertBefore(cap, t.firstChild);
+      }
+      Array.prototype.forEach.call(t.querySelectorAll("th:not([scope])"), function (th) { th.setAttribute("scope", t.rows[0] === th.parentNode ? "col" : "row"); });
+    });
+    Array.prototype.forEach.call(root.querySelectorAll("canvas:not([role])"), function (c) {
+      c.setAttribute("role", "img");
+      c.setAttribute("aria-label", (nearestHeading(c) || "Chart") + ". Chart; the same results are written out in the text and tables on this page.");
+    });
+  }
+  fixA11y(document);
+  if (window.MutationObserver && $("main")) {
+    var pending = false;
+    new MutationObserver(function () { if (pending) return; pending = true; setTimeout(function () { pending = false; fixA11y(document); }, 150); })
+      .observe($("main"), { childList: true, subtree: true });
+  }
 })();
