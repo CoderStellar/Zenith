@@ -262,7 +262,7 @@
   function initMap() {
     if (mapReady) return; mapReady = true;
     map = L.map("map", { worldCopyJump: true }).setView([46, -135], 3);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 10, attribution: "&copy; OpenStreetMap contributors" }).addTo(map);
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", { maxZoom: 10, subdomains: "abcd", attribution: "&copy; OpenStreetMap contributors &copy; CARTO" }).addTo(map);
     names.forEach(s => {
       markers[s] = L.circleMarker(STATES[s].center, { radius: 12, weight: 2, color: "#222", fillOpacity: .9 }).addTo(map)
         .bindTooltip(s).on("click", () => selectState(s));
