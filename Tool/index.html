@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>West Coast Climate Assessment Tool</title>
+  <meta name="description" content="NASA Space Apps tool: measured trends in temperature, precipitation, smoke, water storage and soil moisture for Alaska, California, Hawaii, Oregon and Washington, with significance tests.">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=8">
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">&#9728;</span>
+      <div>
+        <h1>West Coast Climate Assessment</h1>
+        <p>Alaska &middot; California &middot; Hawaii &middot; Oregon &middot; Washington</p>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button role="tab" id="tab-home" aria-controls="panel-home" aria-selected="true">Homepage</button>
+      <button role="tab" id="tab-try" aria-controls="panel-try" aria-selected="false">Try it out yourself</button>
+      <button role="tab" id="tab-map" aria-controls="panel-map" aria-selected="false">Map &amp; States</button>
+      <button role="tab" id="tab-about" aria-controls="panel-about" aria-selected="false">About</button>
+    </nav>
+  </header>
+
+  <div class="banner" role="note">
+    <strong>Real NASA data</strong>, averaged over each state's outline (generated <span id="data-date"></span>).
+    Every trend comes with a 95% range and a verdict from a significance test; faded colours mean
+    &ldquo;no clear trend yet&rdquo;. Methods and caveats are in the About tab.
+  </div>
+
+  <main>
+    <!-- TAB 1: HOMEPAGE -->
+    <section id="panel-home" role="tabpanel" aria-labelledby="tab-home">
+      <div class="hero">
+        <h2>What is changing in the Pacific states, and how sure are we?</h2>
+        <p>Measured trends in air temperature, precipitation, summer smoke, water storage and soil moisture from NASA satellites and models, each tested for statistical significance.</p>
+      </div>
+
+      <article class="card explain">
+        <h3>What this means</h3>
+        <p id="home-explain" class="lede"></p>
+        <p id="home-explain-src" class="sub"></p>
+      </article>
+
+      <div class="kpis" id="kpis"></div>
+
+      <div class="grid two">
+        <article class="card">
+          <h3>Temperature anomaly over time</h3>
+          <p class="sub">Yearly state-average air temperature, &deg;C relative to the 1991&ndash;2020 average (MERRA-2, 1980&ndash;2024)</p>
+          <div class="chart-box"><canvas id="chart-trend"></canvas></div>
+        </article>
+        <article class="card">
+          <h3>State comparison</h3>
+          <label class="inline">Variable
+            <select id="home-var"></select>
+          </label>
+          <div class="chart-box"><canvas id="chart-bar"></canvas></div>
+          <p class="sub" id="bar-note"></p>
+        </article>
+      </div>
+
+      <div class="grid two">
+        <article class="card">
+          <h3>Change profile</h3>
+          <label class="inline">State
+            <select id="home-state"></select>
+          </label>
+          <div class="chart-box"><canvas id="chart-radar"></canvas></div>
+          <p class="sub">Each axis ranks the state's trend from lowest (centre) to highest (edge) among the five states. Exact values:</p>
+          <ul class="profile" id="radar-detail"></ul>
+        </article>
+        <article class="card">
+          <h3>Seasonal precipitation</h3>
+          <p class="sub">Average precipitation in each month, mm (GPM IMERG, state average, 2001&ndash;2024)</p>
+          <div class="chart-box"><canvas id="chart-season"></canvas></div>
+        </article>
+      </div>
+
+      <div class="hero slim">
+        <h2>What drives what?</h2>
+        <p class="sub">The correlation engine compares the variables month by month after removing seasons and long-term trends, so two things that merely both drift are not counted as linked. A link only reaches &ldquo;consistent with A influencing B&rdquo; if a known physical mechanism fits. It never says &ldquo;causes&rdquo;.</p>
+      </div>
+      <div class="grid two">
+        <article class="card">
+          <h3>What moves together?</h3>
+          <label class="inline">State <select id="link-state"></select></label>
+          <p class="sub">Correlation of month-to-month changes, 2003&ndash;2024. Orange = move the same way, blue = opposite ways; blank = no clear link.</p>
+          <div id="link-matrix" class="scroll"></div>
+        </article>
+        <article class="card">
+          <h3>What these links mean</h3>
+          <p id="link-explain" class="lede small"></p>
+          <p id="link-explain-src" class="sub"></p>
+          <h3>Is a trend explained by another variable?</h3>
+          <div id="link-trends" class="detail scroll"></div>
+        </article>
+      </div>
+      <article class="card">
+        <h3>Links found</h3>
+        <div id="link-pairs" class="detail scroll"></div>
+      </article>
+      <article class="card">
+        <h3>Same process, five states</h3>
+        <label class="inline">Pair <select id="cmp-pair"></select></label>
+        <div class="chart-box"><canvas id="chart-cmp"></canvas></div>
+        <p id="cmp-summary" class="sub"></p>
+      </article>
+    </section>
+
+    <!-- TAB: TRY IT OUT YOURSELF -->
+    <section id="panel-try" role="tabpanel" aria-labelledby="tab-try" hidden>
+      <div class="map-layout">
+        <aside class="side">
+          <h2>Try it anywhere</h2>
+          <p class="sub">Pick any box on Earth and a NASA variable. The same engine that made the Pacific-states numbers fetches the data and tests the trend.</p>
+          <div class="boxin">
+            <label class="block">West<input id="try-w" type="number" step="0.1"></label>
+            <label class="block">East<input id="try-e" type="number" step="0.1"></label>
+            <label class="block">South<input id="try-s" type="number" step="0.1"></label>
+            <label class="block">North<input id="try-n" type="number" step="0.1"></label>
+          </div>
+          <label class="block">Places in the news</label>
+          <p class="sub">Environment headlines from the last 7 days, each tied to the place it names. Click one to set the box and the variables for its topic.</p>
+          <div id="try-news" class="newslist" aria-live="polite"><p class="sub">Loading headlines…</p></div>
+          <button id="try-draw" class="ghost">Draw a box</button>
+          <p class="sub">Or hold Shift and drag on the map, or type the coordinates.</p>
+          <label class="block">Variables (pick one or more)</label>
+          <div id="try-vars" class="checks one"></div>
+          <div class="boxin">
+            <label class="block">From<input id="try-y0" type="number" value="2003" min="1980" max="2026"></label>
+            <label class="block">To<input id="try-y1" type="number" value="2024" min="1980" max="2026"></label>
+          </div>
+          <button id="try-run" class="primary">Find the trends</button>
+          <p id="try-status" class="sub" aria-live="polite">Connecting to the tool server…</p>
+          <div id="try-map-legend" class="legend"></div>
+        </aside>
+        <div class="map-wrap">
+          <div id="try-map" class="trymap" aria-label="World map for choosing a region"></div>
+          <p class="sub map-note">Dashed box: your region (from a preset, a headline, or the coordinates). After a run, coloured cells show the trend in each grid cell (for variables with a global file on the server).</p>
+        </div>
+      </div>
+
+      <div id="try-results" hidden>
+        <div class="hero slim">
+          <h2>What is changing here</h2>
+          <p class="sub">One row per variable. Then pick one below for its full charts and map.</p>
+        </div>
+        <div class="kpis" id="try-summary"></div>
+        <div class="card detailbar">
+          <label class="inline">Show details for <select id="try-detail"></select></label>
+        </div>
+        <div class="hero slim">
+          <h2 id="try-title"></h2>
+          <p id="try-caveat" class="sub"></p>
+        </div>
+        <div class="kpis" id="try-kpis"></div>
+        <article class="card explain">
+          <h3>What this means</h3>
+          <p id="try-explain" class="lede" aria-live="polite"></p>
+          <p id="try-explain-src" class="sub"></p>
+        </article>
+        <div class="grid two">
+          <article class="card">
+            <h3>Time series and trend</h3>
+            <p class="sub">Grey: each month minus that month's usual value. Orange: the trend and the range it could plausibly have (95%).</p>
+            <div class="chart-box"><canvas id="try-chart-series"></canvas></div>
+          </article>
+          <article class="card">
+            <h3>Trend by season and month</h3>
+            <p class="sub">Bars: trend of each season's (left) and each month's (right) average. Coloured = clear trend, grey = no clear trend yet. Thin bars: 95% range.</p>
+            <div class="chart-box"><canvas id="try-chart-seasons"></canvas></div>
+          </article>
+        </div>
+        <div class="grid two">
+          <article class="card">
+            <h3>Does it depend on the start year?</h3>
+            <p class="sub">Trend to the end of the record for every possible start year. Orange dots are significant. A robust trend keeps its sign.</p>
+            <div class="chart-box"><canvas id="try-chart-sens"></canvas></div>
+          </article>
+          <article class="card">
+            <h3>What moves together here?</h3>
+            <p class="sub">The correlation engine: seasons and trends removed, memory-adjusted tests, a fixed physics table. It never says "causes".</p>
+            <div id="try-corr-vars" class="checks"></div>
+            <button id="try-corr-run" class="primary">Run the correlation engine</button>
+            <p id="try-corr-status" class="sub" aria-live="polite"></p>
+          </article>
+        </div>
+        <div id="try-corr-out" hidden>
+          <div class="grid two">
+            <article class="card">
+              <h3>Correlation map</h3>
+              <p class="sub">Month-to-month correlation after seasons and trends are removed; blank = no clear link.</p>
+              <div id="try-corr-matrix" class="scroll"></div>
+            </article>
+            <article class="card">
+              <h3>Is each trend explained by another variable?</h3>
+              <div id="try-corr-trends" class="detail scroll"></div>
+            </article>
+          </div>
+          <article class="card explain">
+            <h3>What these links mean</h3>
+            <p id="try-corr-explain" class="lede" aria-live="polite"></p>
+            <p id="try-corr-explain-src" class="sub"></p>
+          </article>
+          <article class="card">
+            <h3>Links found</h3>
+            <div id="try-corr-pairs" class="detail scroll"></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: MAP -->
+    <section id="panel-map" role="tabpanel" aria-labelledby="tab-map" hidden>
+      <div class="map-layout">
+        <aside class="side">
+          <h2>Explore a variable</h2>
+          <label class="block">Variable
+            <select id="map-var"></select>
+          </label>
+          <p id="var-desc" class="sub"></p>
+          <div id="legend" class="legend"></div>
+          <label class="block">Trend map inside the analysis boxes
+            <select id="map-grid">
+              <option value="">Off</option>
+              <option value="temp">Air temperature (per grid cell)</option>
+              <option value="water">Total water storage (per grid cell)</option>
+            </select>
+          </label>
+          <div id="grid-legend" class="legend"></div>
+          <h3>State ranking</h3>
+          <ol id="ranking" class="ranking"></ol>
+          <div id="state-detail" class="detail" aria-live="polite">
+            <p class="sub">Click a state on the map or in the ranking to see all of its variables.</p>
+          </div>
+        </aside>
+        <div class="map-wrap">
+          <div id="map" aria-label="Map of Alaska, California, Hawaii, Oregon and Washington"></div>
+          <p class="sub map-note">Colours show each state's trend for the selected variable. Solid white boxes: the West Coast analysis boxes (Pacific coast, Alaska, Hawaii); dashed boxes: each state's bounding box. State statistics use the exact US Census 2024 outlines, not the boxes. Use the layer control (top right) to switch layers.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: ABOUT -->
+    <section id="panel-about" role="tabpanel" aria-labelledby="tab-about" hidden>
+      <div class="about">
+        <nav class="toc" aria-label="About sections">
+          <a href="#methodology">Methodology</a>
+          <a href="#engine">Correlation engine</a>
+          <a href="#benchmarks">Benchmarks</a>
+          <a href="#guardrails">Guardrails</a>
+          <a href="#run">Run it</a>
+          <a href="#sources">Sources</a>
+        </nav>
+
+        <article id="methodology" class="card">
+          <h2>Methodology</h2>
+          <ol>
+            <li><strong>Regions.</strong> US Census 2024 state outlines. Each grid cell counts by the share of it inside the state, weighted by cos(latitude), like NASA Giovanni's shape masks. Alaska's outline is cut at 180&deg; (the far-western Aleutians are left out).</li>
+            <li><strong>Data.</strong> Monthly NASA products, fetched through NASA Earthdata (Harmony subsetting and Giovanni's averaging service):
+              air temperature (MERRA-2 M2TMNXSLV, 1980&ndash;2024), precipitation (GPM IMERG V07, 2001&ndash;2024),
+              aerosol optical depth (MODIS Aqua MYD08_M3, summers 2003&ndash;2024), total water storage (GRACE/GRACE-FO JPL mascons, 2003&ndash;2024),
+              soil moisture (GLDAS Noah 2.1, 2003&ndash;2024).</li>
+            <li><strong>Trend.</strong> A straight-line trend fitted together with the seasonal cycle on the real monthly calendar (gaps such as GRACE's 2017&ndash;18 gap stay gaps). For smoke, the trend of each summer's June&ndash;August average.</li>
+            <li><strong>Significance.</strong> Neighbouring months are not independent, so the test uses an effective number of months from the lag-1 autocorrelation (the adjustment IPCC AR6 uses, Santer et al. 2008). The 95% range and p-value come from that test.</li>
+            <li><strong>Verdict.</strong> &ldquo;Clear rise/fall&rdquo; needs p &lt; 0.05 <em>and</em> a robust Theil&ndash;Sen slope with the same correction pointing the same way. Otherwise &ldquo;no clear trend yet&rdquo;: the change so far is within normal year-to-year swings, so it could still be noise. That is not the same as &ldquo;no trend&rdquo;; a longer record may settle it.</li>
+            <li><strong>Explanations.</strong> The &ldquo;What this means&rdquo; text is written by an AI model from a fact sheet of the computed numbers. A checker rejects any number not in the results, causal claims (&ldquo;caused by&rdquo;, &ldquo;proves&rdquo;) and filler words; if a reply fails twice, a plain template sentence is shown instead.</li>
+            <li><strong>Units.</strong> Temperature in &deg;C per decade; precipitation and soil moisture as % of the state's average per decade; smoke in aerosol optical depth per decade; water storage in mm of water per year (and km&sup3;/yr for the whole state).</li>
+            <li><strong>Pipeline.</strong> <code>scripts/build_tool_data.py</code> in the earthpull project downloads, clips, averages and tests everything, then writes <code>data.js</code>. The site itself is static and does no processing.</li>
+          </ol>
+        </article>
+
+        <article id="engine" class="card">
+          <h2>Correlation engine</h2>
+          <p class="sub">"What moves together here?" in the Try tab. No AI: fixed statistics and a fixed physics table. The strongest wording it uses is "consistent with A influencing B", never "causes".</p>
+          <ol>
+            <li><strong>Clean-up.</strong> Each calendar month's normal value is removed (seasons), then each variable's trend is removed with the same fit as the trend test, so two variables that merely both drift are not called linked.</li>
+            <li><strong>Move together?</strong> Lagged correlation (0&ndash;3 months, either direction), with an effective sample size from each series' lag-1 autocorrelation (Bretherton et al. 1999), Benjamini&ndash;Hochberg false-discovery correction across all pairs and delays, and a surrogate test (phase-randomised series that keep each variable's own rhythm).</li>
+            <li><strong>Not explained by the rest?</strong> Partial correlation, controlling for every other variable chosen.</li>
+            <li><strong>Timing.</strong> Granger causality test in both directions (does A's past help predict B?), used only to flag one-way timing.</li>
+            <li><strong>Physics.</strong> A fixed table of 26 known mechanisms (for example rain &rarr; soil moisture, warmer air &rarr; drier soil, snowfall &rarr; snow depth). Only listed pairs, with the expected sign and delay, reach the top verdict. "Same" pairs (two measures of one thing) should agree; "shared" pairs (common source) are never called a cause.</li>
+            <li><strong>Is a trend explained by another variable?</strong> The variable is refitted with the other one added (same memory-adjusted errors). If the other one has no significant effect of its own, or is itself just a steady trend with no known mechanism, the engine says the two "cannot be separated".</li>
+          </ol>
+        </article>
+
+        <article id="benchmarks" class="card">
+          <h2>Benchmarks</h2>
+          <p class="sub">The engine was run on the same variables, regions and periods as published studies. 13 of 16 checks pass; the 3 misses are dataset or region limits, now shown as caveats.</p>
+          <div class="detail scroll"><table>
+            <tr><th>Study</th><th>Quantity</th><th>Published</th><th>This engine</th><th></th></tr>
+            <tr><td>Rodell et al. 2009, Nature</td><td>NW India groundwater, 2002&ndash;08</td><td>&minus;17.7 &plusmn; 4.5 km&sup3;/yr</td><td>&minus;11.3 (&minus;15.0 with margin)</td><td>pass</td></tr>
+            <tr><td>Rodell et al. 2018, Nature</td><td>Caspian Sea water, 2002&ndash;16</td><td>&minus;23.7 &plusmn; 4.2 Gt/yr</td><td>&minus;18.0 (&minus;26.4 with margin)</td><td>pass</td></tr>
+            <tr><td>Rodell et al. 2018, Nature</td><td>Antarctica mass, 2002&ndash;16</td><td>&minus;127.6 &plusmn; 39.9 Gt/yr</td><td>&minus;103</td><td>pass</td></tr>
+            <tr><td>Famiglietti et al. 2011, GRL</td><td>Central Valley water, 2003&ndash;10</td><td>&minus;31.0 &plusmn; 2.7 mm/yr</td><td>&minus;27.5</td><td>pass</td></tr>
+            <tr><td>Famiglietti et al. 2011, GRL</td><td>Central Valley groundwater</td><td>&minus;20.4 &plusmn; 3.9 mm/yr</td><td>&minus;16.9</td><td>pass</td></tr>
+            <tr><td>Liu et al. 2022, Nat. Commun.</td><td>Central Valley groundwater, 2003&ndash;21</td><td>&minus;2.41 km&sup3;/yr</td><td>&minus;1.97</td><td>pass</td></tr>
+            <tr><td>Velicogna et al. 2020, GRL</td><td>Greenland mass, 2002&ndash;19</td><td>&asymp; &minus;268 Gt/yr</td><td>&minus;273</td><td>pass</td></tr>
+            <tr><td>Rantanen et al. 2022, Commun. E&amp;E</td><td>Arctic warming, 1979&ndash;2021</td><td>+0.73 &deg;C/decade</td><td>+0.45 (MERRA-2)</td><td>miss: dataset</td></tr>
+            <tr><td>Rantanen et al. 2022</td><td>Global warming</td><td>+0.19 &deg;C/decade</td><td>+0.14 (MERRA-2)</td><td>pass</td></tr>
+            <tr><td>Krotkov et al. 2016, ACP</td><td>Eastern US NO&#8322;, 2005&ndash;15</td><td>more than &minus;40%</td><td>&minus;38%</td><td>pass</td></tr>
+            <tr><td>Krotkov et al. 2016</td><td>India NO&#8322;, whole-country box</td><td>more than +50%</td><td>+23%</td><td>miss: region</td></tr>
+            <tr><td>Krotkov et al. 2016</td><td>India NO&#8322;, coal-power belt</td><td>more than +50%</td><td>+39%</td><td>pass</td></tr>
+            <tr><td>Duncan et al. 2016, JGR</td><td>New York City NO&#8322;, 2005&ndash;14</td><td>about &minus;45%</td><td>&minus;43%</td><td>pass</td></tr>
+            <tr><td>Duncan et al. 2016</td><td>Beijing NO&#8322;</td><td>about &minus;10%</td><td>+9%</td><td>miss: city scale</td></tr>
+            <tr><td>Che et al. 2019, ACP</td><td>MODIS AOD, eastern US</td><td>falling</td><td>falling, p &lt; 10&#8315;&#8311;</td><td>pass</td></tr>
+            <tr><td>Che et al. 2019</td><td>MODIS AOD, India</td><td>rising</td><td>rising, p &lt; 10&#8315;&#8311;</td><td>pass</td></tr>
+          </table></div>
+          <p class="sub">Also reproduced: the challenge video's example (Wisconsin summer aerosol rising, linked to Canadian wildfire smoke; wind blows from central Canada toward Wisconsin in 93% of the smokiest months).</p>
+        </article>
+
+        <article id="guardrails" class="card">
+          <h2>Guardrails</h2>
+          <ul>
+            <li><strong>Trends, not causes.</strong> The tool reports what changed and how sure the statistics are. It does not say why.</li>
+            <li><strong>Not a forecast.</strong> Past trends do not predict the future, and nothing here is emergency, insurance, planning or legal advice.</li>
+            <li><strong>Resolution limits.</strong> State averages hide large local differences. GRACE's footprint is about 300 km, so Hawaii's water-storage trend is not reliable, and state totals leak across borders (shown as a range).</li>
+            <li><strong>Relative charts.</strong> The change profile ranks these five states against each other only.</li>
+            <li><strong>Tested against published studies.</strong> 13 of 16 checks against 9 papers pass (see Benchmarks); the dataset limitations they revealed are listed below.</li>
+            <li><strong>Attribution.</strong> Built with NASA open data. Not affiliated with or endorsed by NASA.</li>
+            <li><strong>Privacy and accessibility.</strong> No accounts, tracking or personal data. Keyboard-navigable tabs, labelled controls, and text versions (ranking list, detail table, profile list) of every chart.</li>
+          </ul>
+          <h3>Dataset caveats from our benchmark tests</h3>
+          <ul id="caveats"></ul>
+        </article>
+
+        <article id="run" class="card">
+          <h2>Run it</h2>
+          <p>The Homepage and Map tabs work as a static site. "Try it out yourself" needs the tool server, which fetches NASA data on demand (a free NASA Earthdata login is required on the server):</p>
+          <p><code>.venv/bin/uvicorn earthpull.api:app --port 8000</code> then open <code>http://localhost:8000</code></p>
+          <p class="sub">Variables with a global file on the server (air temperature, aerosol, MODIS AOD, GRACE) answer in seconds anywhere on Earth; others take from seconds (Giovanni averaging) to a few minutes the first time, then are cached.</p>
+        </article>
+
+        <article id="sources" class="card">
+          <h2>Sources</h2>
+          <ul class="sources">
+            <li><a href="https://disc.gsfc.nasa.gov/datasets/M2TMNXSLV_5.12.4/summary" target="_blank" rel="noopener">MERRA-2 M2TMNXSLV v5.12.4</a> (NASA GMAO / GES DISC) &mdash; 2 m air temperature</li>
+            <li><a href="https://disc.gsfc.nasa.gov/datasets/GPM_3IMERGM_07/summary" target="_blank" rel="noopener">GPM IMERG Final monthly V07 (GPM_3IMERGM)</a> (NASA GES DISC) &mdash; precipitation</li>
+            <li><a href="https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/MYD08_M3" target="_blank" rel="noopener">MODIS Aqua MYD08_M3 v6.1</a> (NASA LAADS) &mdash; aerosol optical depth, 550 nm</li>
+            <li><a href="https://podaac.jpl.nasa.gov/dataset/TELLUS_GRAC-GRFO_MASCON_CRI_GRID_RL06.3_V4" target="_blank" rel="noopener">GRACE/GRACE-FO JPL mascons RL06.3 v04 (CRI)</a> (NASA PO.DAAC) &mdash; total water storage</li>
+            <li><a href="https://disc.gsfc.nasa.gov/datasets/GLDAS_NOAH025_M_2.1/summary" target="_blank" rel="noopener">GLDAS Noah 2.1 monthly</a> (NASA GES DISC) &mdash; soil moisture, evaporation, snow</li>
+            <li>Also in "Try it out yourself": AIRS AIRS3STM 7.0 (surface air temperature), OMI OMNO2d 003 (NO&#8322;), MERRA-2 M2TMNXAER (aerosol), MODIS MOD13C2 / MOD11C3 (greenness, land temperature)</li>
+            <li><a href="https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html" target="_blank" rel="noopener">US Census Bureau cartographic boundaries 2024</a> &mdash; state outlines used for the statistics</li>
+            <li><a href="https://github.com/PublicaMundi/MappingAPI/blob/master/data/geojson/us-states.json" target="_blank" rel="noopener">US states GeoJSON</a> &mdash; map drawing</li>
+            <li><a href="https://leafletjs.com/" target="_blank" rel="noopener">Leaflet</a>, <a href="https://www.chartjs.org/" target="_blank" rel="noopener">Chart.js</a>, <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a> &mdash; software and basemap</li>
+          </ul>
+          <p class="sub">Methods references: Santer et al. 2008 (effective sample size); Sen 1968 (Theil&ndash;Sen slope); Bretherton et al. 1999 (correlation significance); Benjamini &amp; Hochberg 1995 and Wilks 2016 (multiple testing); Granger 1969; Weatherhead et al. 1998 (years needed to detect a trend); IPCC AR6 WG1 Ch. 2. Software: Python (numpy, pandas, xarray, scipy, statsmodels, pymannkendall, regionmask, geopandas, earthaccess, harmony-py, FastAPI), Leaflet, Chart.js.</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    Built for NASA Space Apps Challenge. Not affiliated with or endorsed by NASA.
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="data.js?v=9"></script>
+  <script src="grids.js?v=6"></script>
+  <script src="try.js?v=9"></script>
+  <script src="app.js?v=9"></script>
+</body>
+</html>

@@ -1,0 +1,135 @@
+# Preprocessing NASA monthly Earth-science series for trend analysis: seasonality, gaps, breaks, non-linearity, record length
+
+Scope: regional monthly means, 15-45 years, from MERRA-2, GPM IMERG V07, GLDAS Noah 2.1, GRACE/GRACE-FO JPL mascons, OMI NO2, MODIS, AIRS. "Cited Findings" were checked in the linked source during this session (some only through search-result abstracts or summaries, noted where so). "Inferences" are my own reasoning or background knowledge that I did **not** verify in a source this session. Treat them as recommendations to check, not as cited facts.
+
+Research budget note: about 15 tool calls. Several primary PDFs (Weatherhead 1998 full text, IPCC AR5 Ch. 2 final PDF, Lund et al. 2023 PDF) returned 403 errors or unreadable binary. Their content below comes from abstracts or secondary mirrors, and each such case is flagged.
+
+## 1. Deseasonalising: climatology anomalies vs harmonic regression vs STL; baseline; changing seasonal cycle
+
+### Takeaway
+Both monthly-climatology subtraction and joint harmonic regression (trend + annual + semiannual) are used in flagship NASA GRACE work. Rodell et al. 2018 subtracted calendar-month means; other GRACE groups fit trend, annual and semiannual terms jointly by least squares. The baseline period changes only the offset of anomalies, not the slope. It does matter when you compare datasets (the JPL mascons are anomalies relative to 2004.0-2009.999).
+
+### Cited Findings
+- Rodell et al. 2018 (Nature, "Emerging trends in global freshwater availability") removed seasonality by subtracting monthly climatology: the "mean for the corresponding month of the year was subtracted", with the mean seasonal cycle computed by "averaging all Januarys, all Februarys, etc." They then fit a best-fit linear trend. Trend estimation was done "within Excel spreadsheets." — [Rodell et al. 2018, PMC full text](https://pmc.ncbi.nlm.nih.gov/articles/PMC6077847)
+- Other GRACE studies "fit a linear trend, annual and semi-annual model to each pixel over the mission, using least squares", sometimes uncertainty-weighted. The Colorado (CCAR) GRACE mascon tool estimates trend together with annual and semi-annual signals by least squares. — search-result summaries of [Scanlon/related GRACE papers (escholarship)](https://escholarship.org/content/qt5m76t6m7/qt5m76t6m7.pdf?t=rvfbkt) and [CCAR GRACE FAQ](https://ccar.colorado.edu/grace/faq.html) (not fetched in full)
+- In GRACE work, trend uncertainties are often taken from the formal monthly uncertainties scaled by the RMS residual after removing fluctuations longer than three months. — same search-result summary (not fetched in full)
+- JPL mascon values "are anomalies relative to the 2004.0-2009.999 time-mean". To compare with other datasets, users must use the same baseline. To change it, average the grids over the new period and subtract that average from every month. — [JPL GRACE mascons page](https://grace.jpl.nasa.gov/data/get-data/jpl_global_mascons.html)
+- The Reeves et al. 2007 changepoint comparison found that the SNHT procedure and its nonparametric variant are "probably best when trend and periodic effects can be diminished". Seasonality left in the data degrades breakpoint tests. — [Reeves et al. 2007 abstract (via search)](https://zendy.io/title/10.1175/jam2493.1)
+
+### Inferences
+- Climatology subtraction vs harmonic regression (my reasoning). With a complete, evenly sampled record, the two give nearly the same OLS slope. With gaps that fall unevenly across calendar months, they differ. Example: GRACE late-record gaps that undersample May, which is why Rodell interpolated first. Calendar-month means computed from unbalanced months absorb part of the trend into the climatology, and the anomalies are no longer orthogonal to the trend. Fitting trend and harmonics **jointly** (`y ~ 1 + t + sin(2πt) + cos(2πt) + sin(4πt) + cos(4πt)`, plus optional step terms) avoids this. It also handles missing months natively: drop the NaN rows. It is 6 parameters instead of 12, so it costs fewer degrees of freedom. Recommended default for GRACE and any gappy series. A 12-month-dummy joint regression is the equivalent of climatology subtraction for complete series.
+- Uncertainty. Subtracting a climatology estimated from the same data and then running OLS slightly understates uncertainty, because the 11-12 seasonal degrees of freedom are not counted. This is minor for 180+ months. The bigger error is ignoring residual autocorrelation (see Section 5). Use AR(1)-adjusted (effective-n) or HAC/Newey-West standard errors in statsmodels.
+- STL (Cleveland et al. 1990) is good for visualisation and robust to outliers, and it allows the seasonal cycle to evolve. If you fit a trend to the STL trend component, the smoothed component has strong autocorrelation, so naive OLS standard errors are badly too small. If you use STL, fit the linear trend to (data − STL seasonal) and correct for AR(1) residuals. Do not regress the STL trend component itself.
+- Changing seasonal cycle. For 15-45 year regional means, a fixed seasonal cycle is the standard simple choice. Allowing it to change (STL with a short seasonal window, or harmonics × t interaction terms) can soak up part of the signal you are testing, such as earlier snowmelt in GLDAS SWE. Recommend a fixed cycle for the headline trend, then a secondary check that fits trends per calendar month or season (e.g. JJA vs DJF) to show students seasonal differences in trend.
+- Baseline choice. Baseline shifts the intercept only, so the slope is unchanged. Keep one consistent baseline across datasets in the tool's display (e.g. the full common overlap period, or 2004-2009 to match JPL).
+
+### Gaps
+- I did not verify Cleveland et al. 1990 (STL) or any paper that formally compares the bias or uncertainty of the three deseasonalisation approaches. The orthogonality and gap-bias argument above is my own reasoning.
+- I did not verify Humphrey et al. 2016's exact decomposition method. From memory, they separate trend, seasonal and subseasonal components of GRACE TWS, but this is unverified.
+
+## 2. Missing months and gaps (especially GRACE)
+
+### Takeaway
+GRACE/GRACE-FO has an ~11-month gap (July 2017 to May 2018) plus scattered missing months. Regression-based trend fits handle irregular sampling without interpolation, if each value is regressed on its real decimal time. Rodell et al. 2018 did linearly interpolate missing months, but only to stabilise the calendar-month climatology. Do **not** interpolate across the 11-month mission gap for trend purposes.
+
+### Cited Findings
+- Rodell et al. 2018: "missing months of data were filled by linear interpolation". The stated motivation was that "the month of May was under-sampled in the second half of the study period". Period: April 2002 to March 2016. Uncertainty = root sum of squares of (1-σ spread of trends across three mascon solutions) and (spread across four GIA models). — [Rodell et al. 2018](https://pmc.ncbi.nlm.nih.gov/articles/PMC6077847)
+- The GRACE mission ended in October 2017, and GRACE-FO launched in May 2018, about 11 months later. Sources put the missing period at July 2017 to May 2018. — search summary of [Qian et al. 2024, Remote Sensing 16:3693](https://www.mdpi.com/2072-4292/16/19/3693)
+- Gap-filling studies exist. Qian et al. 2024 fill "only on the piecewise de-trended TWSA series" and then re-add the trends. Other approaches: least-squares constant + trend + annual + semiannual (CTAS) models predicting missing months, AR forward/backward prediction, EOF reconstruction with SLR. For the natural gap, forward vs backward AR predictions disagree by about 10 cm, roughly 10-20% of the total TWS signal for 60% of areas. — [Qian et al. 2024](https://www.mdpi.com/2072-4292/16/19/3693); other results surfaced in the same search, e.g. [Mo et al. 2022 Bayesian reconstruction, WRR](https://ui.adsabs.harvard.edu/abs/2022WRR....5831997M), [J. Geodesy 2024](https://link.springer.com/article/10.1007/s00190-024-01917-3) (search summaries, not fetched in full)
+- JPL: "'Monthly' is used somewhat loosely". Check the actual data days for each solution. "Gaps exist in both the GRACE and GRACE-FO data records." Uncertainties are somewhat larger at the start and end of the series because of the Kalman filter. Gain (scale) factors "may not be suitable for quantifying trends" in land data, because they are dominated by annual cycles. — [JPL GRACE mascons](https://grace.jpl.nasa.gov/data/get-data/jpl_global_mascons.html)
+
+### Inferences
+- Recommended implementation. Use the true mid-month (or data-span midpoint) decimal year for every GRACE value. Fit trend + annual + semiannual by OLS (or WLS with JPL uncertainties) on the available months only, with no interpolation. This is the CTAS model that the gap-filling literature itself uses as a baseline, so fitting it directly on the observed months is equivalent to "filling then fitting" with a CTAS model, without inventing data.
+- Interpolating across 11 months then running OLS or Mann-Kendall treats invented points as real observations. That inflates n, shrinks the standard error, and strengthens apparent autocorrelation. Interpolation of isolated single missing months only matters if you use climatology subtraction or Mann-Kendall/Sen (which assume regular spacing). In that case, interpolate single months only and flag them.
+- Add an optional GRACE vs GRACE-FO offset term (a step at 2018-06). Inter-mission bias is a possible inhomogeneity. Report whether including it changes the trend, because with a step term the trend is estimated mostly from within-mission slopes.
+- For Mann-Kendall/Sen's slope on irregular data: compute pairwise slopes using actual times. Sen's estimator works with irregular spacing, but the seasonal Mann-Kendall needs per-calendar-month series, and gaps reduce power.
+- Missing-data threshold (my rule of thumb): require at least ~80% of months present and no single gap longer than ~10% of the record. Otherwise warn. GRACE (~15% missing over 2002-2024 including the gap) sits near this limit.
+- Do not apply JPL land gain factors when computing trends, given JPL's own caveat. Or at least flag it.
+
+### Gaps
+- I found no paper that directly quantifies how much regional TWS trends shift when the 2017-2018 gap is bridged vs left unfilled.
+- I did not verify Humphrey et al. 2016's gap handling.
+
+## 3. Step changes and inhomogeneities from sensor or processing changes
+
+### Takeaway
+Level shifts are a first-order issue. Weatherhead et al. 1998 report that a level shift can raise the years needed to detect a trend by 50% or more. NASA and UCAR documentation explicitly warn that IMERG is "not a Climate Data Record". MERRA-2 still contains observing-system discontinuities. The OMI row anomaly changes sampling from 2007 onward. Best practice for known dates (documented product changes) is an intervention or step term in the regression. Blind breakpoint tests are fragile, because results change drastically depending on whether trend and autocorrelation are modelled.
+
+### Cited Findings
+- Weatherhead et al. 1998 (abstract): sudden level shifts "whether due to artificial sources, such as changes in instrumentation or site location, or natural sources, such as volcanic eruptions, can strongly impact the number of years necessary to detect a given trend, increasing the number of years by as much as 50% or more". — [Weatherhead et al. 1998 record](https://impacts.ucar.edu/en/publications/factors-affecting-the-detection-of-trends-statistical-considerati/) (full PDF returned 403)
+- IMERG (UCAR Climate Data Guide, last modified 2025-12-11): the "temporal record may not be homogeneous" because it relies on a varying group of satellites of opportunity. J. Tan: "Using IMERG for climate-scale studies requires caution since the algorithm prioritizes the highest possible resolution over a consistent record", "changes in the constellation can introduce artificial jumps". Users should look for "changes in the time-series coincident with changes in the constellation". G. Huffman: "IMERG is not a Climate Data Record", "IMERG's ~20-year record is really not sufficient for studies of long-term trends", and "such variations should steer users away from IMERG to the GPCP for climate studies." — [UCAR Climate Data Guide: GPM IMERG](https://climatedataguide.ucar.edu/climate-data/gpm-global-precipitation-measurement-mission)
+- IMERG V07 adds improved PMW intercalibration and PMW estimates over frozen surfaces. NASA says the V08 plan focuses on continuity at the TRMM/GPM transition, the TRMM and GPM orbit boosts, and constellation homogeneity. That implies these remain known discontinuity points in V07. — [IMERG V07 technical documentation](https://gpm.nasa.gov/resources/documents/imerg-v07-technical-documentation); [V07 release notes](https://gpm.nasa.gov/sites/default/files/2024-02/IMERG_V07_ReleaseNotes_240221.pdf) (via search summary)
+- MERRA vs MERRA-2. Original MERRA precipitation had strong steps at the AMSU-A (NOAA-15, 1998) and SSM/I (F08 1987, F11 late 1991) introductions. NASA GMAO says these have "far less disruptive impact in MERRA-2, especially AMSU-A". The UCAR guide says discontinuities associated with major observing-system variations still occur in MERRA-2. Reanalysis-driven ozone simulations show a ~10 DU midlatitude increase after 1998 linked to the same assimilation change, with a caution against deriving multi-decadal O3 trends from them, "especially prior to 1998". — [GMAO MERRA-2 precipitation time series](https://gs6101-gmao.gsfc.nasa.gov/science-snapshots/merra-2-global-precipitation-time-series); [UCAR CDG MERRA-2](https://climatedataguide.ucar.edu/climate-data/nasas-merra2-reanalysis); [AMS 2020 abstract](https://ams.confex.com/ams/2020Annual/webprogram/Paper364444.html); Robertson, Bosilovich et al. 2011, J. Climate 24:5197 (via [AGU abstract](https://ui.adsabs.harvard.edu/abs/2010AGUFM.A53E0315R))
+- OMI row anomaly. It started in June 2007 with 2 of 60 rows and grew to about 50% of rows (Torres et al. 2018). It reduces coverage from 2007 onward and causes sampling differences that can create spurious trends (Anglou et al., EGU25). New anomalous rows (tracks 44-46) produced stripes even after flagged pixels were excluded. Selecting well-performing rows reduced OMI NO2 trend uncertainty by up to a factor of 3 over the US. The NASA MINDS product has a cross-track flag (0 = usable, 1 = affected, do not use). — [Torres et al. 2018 (NASA ESPO)](https://espo.nasa.gov/atom/node/79579); [EGU25-19924](https://meetingorganizer.copernicus.org/EGU25/EGU25-19924.html); [arXiv 1907.06525](https://arxiv.org/pdf/1907.06525); [AGU 2013 abstract](https://ui.adsabs.harvard.edu/abs/2013AGUFM.A23A0202S/abstract); [OMI MINDS NO2 catalog](https://www.earthdata.nasa.gov/data/catalog/ges-disc-omi-minds-no2-2)
+- Changepoint methods. Reeves et al. 2007 compared many undocumented-changepoint methods. Two-phase regression with a common trend and Sawa's Bayes criterion "seem optimal for most climate time series", while SNHT is best "when trend and periodic effects can be diminished". Lund et al. (2023 review): "changepoint conclusions are not robust to small perturbations in assumptions", and "allowing for a trend or correlation in the series can drastically change conclusions". — [Reeves et al. 2007](https://zendy.io/title/10.1175/jam2493.1); [Lund et al., arXiv 2212.02674](https://arxiv.org/abs/2212.02674v1)
+
+### Inferences
+- Recommended pipeline (one day in Python):
+  1. Build a **known-breaks table** per product from documentation. IMERG: TRMM→GPM ~2014, orbit boosts (TRMM Aug 2001, GPM late 2023, dates to verify), constellation changes. MERRA-2: 1998 AMSU-A, ~1987/1991 SSM/I, 2002 AIRS. OMI: June 2007 row anomaly onset. MODIS: Terra-only before July 2002, Aqua after; collection changes; Terra orbit drift in late mission. GRACE: GRACE→GRACE-FO 2018. Show these as vertical lines on every plot.
+  2. Fit `y ~ t + harmonics + Σ step_k` (step dummies at known dates) with HAC or AR(1) errors (statsmodels `OLS(...).fit(cov_type='HAC', cov_kwds={'maxlags':12})` or `GLSAR`). Report the trend with and without step terms. If the trend's sign or significance flips, label it "not robust to known instrument changes".
+  3. Use undocumented-break detection only as a diagnostic, e.g. `ruptures` PELT (Killick et al. 2012) on deseasonalised residuals with a BIC-type penalty, or Pettitt via `pyhomogeneity`. Do not auto-correct with it. Single-break tests (Pettitt, SNHT, Buishand) assume one break and independent data. A smooth trend or AR(1) noise often makes them "find" a mid-record break. That is confounding, consistent with the Lund et al. warning.
+- Without a reference series, a real climate shift cannot be statistically separated from an artifact at an undocumented date. Recommend the tool say "a step coincides with [instrument change]" rather than "corrected".
+- Where a product's documentation advises against trends (IMERG), the tool should show a caveat and suggest GPCP or MERRA-2 cross-checks. That matches Huffman and Tan.
+
+### Gaps
+- I did not verify primary texts of Pettitt 1979, Bai & Perron 2003, Killick et al. 2012, Toreti et al. 2011, or the Bosilovich MERRA-2 discontinuity report / Gelaro et al. 2017 for specific MERRA-2 break dates.
+- I did not find a MODIS-specific documentation statement on trend suitability (Terra/Aqua drift, Collection 6.1) in this session.
+- The quantitative bias of a step on the trend estimate itself (vs years-to-detect) was not found. Analytically, an unmodelled step of size δ at the midpoint biases the OLS slope by roughly 1.5δ/T. That is my derivation, not a sourced figure.
+
+## 4. Non-linear trends: piecewise, LOESS, or linear only
+
+### Takeaway
+IPCC AR5 Box 2.2 says there is no a priori physical reason for trends to be linear, and that sub-period linear trends can differ, even in sign, from the full-period trend. AR5 nonetheless reports OLS linear trends, with a 90% interval covering only sampling uncertainty, as a transparent common metric. For students: report a linear trend plus its uncertainty as the headline, and overlay a smooth (LOESS) curve as a visual check of linearity.
+
+### Cited Findings
+- AR5 WG1 Box 2.2: linear trends describe "the linear component of change over time". Slopes are OLS with an approximate uncertainty method. The 90% interval reflects only sampling uncertainty, and structural uncertainty appears as the spread across datasets. "There is no a priori physical reason why the long-term trend should be linear in time"; many climate series are not well approximated by a straight line. Sub-period trends can differ greatly, even in sign, from the full-period trend for strongly nonlinear series. Box 2.2 Figure 1 shows linear vs nonlinear fits to HadCRUT4 with significant departures from linearity. — [IPCC AR5 WG1 Ch. 2](https://www.ipcc.ch/site/assets/uploads/2017/09/WG1AR5_Chapter02_FINAL.pdf) (final PDF returned 403; content verified via [IPCC wiki mirror of Box 2.2 figure](https://ipcc.fandom.com/wiki/File:WGI_AR5_FigBox2.2-1.jpg) and [AR5 draft chapter](https://archive.ipcc.ch/pdf/assessment-report/ar5/wg1/drafts/fgd/WGIAR5_WGI-12Doc2b_FinalDraft_Chapter02.pdf) search summaries; exact wording should be checked)
+- Weatherhead et al. 2000 applied the detection framework to TOMS ozone recovery, a turnaround or non-linear problem, and found 15-45 years needed for most regions. — [Weatherhead et al. 2000 record](https://impacts.ucar.edu/en/publications/detecting-the-recovery-of-total-column-ozone/)
+
+### Inferences
+- From memory, unverified this session: AR5 Box 2.2 used AR(1)-adjusted effective sample size for the linear trend CI and a smoothing spline (REML) for the nonlinear fit. AR5 also warned that trends over short periods such as 15 years are very sensitive to start and end dates. Verify against the final PDF.
+- Practical rule. Report linear OLS + HAC CI, and overlay LOESS (statsmodels `lowess`, frac ≈ 0.3-0.5 on deseasonalised anomalies). Offer piecewise linear only when a physically motivated breakpoint exists, e.g. NO2 around 2010-2012 in China (rise then decline, as in arXiv 1907.06525), a GRACE drought, or a policy date. Do not choose the breakpoint from the data and then test significance on the same data without a penalty (Davies/BIC), because that overstates significance.
+- Do not report LOESS "trend magnitudes" with p-values to students. Smooths are descriptive.
+- A sliding-window or start-year sensitivity plot (trend vs start year) is a cheap way to show students the sub-period-sign-flip phenomenon AR5 describes.
+
+### Gaps
+- I did not verify AR6 WG1 Chapter 2 trend-methods text.
+
+## 5. Record length and detectability
+
+### Takeaway
+Weatherhead et al. 1998: years needed to detect a trend grow with the noise variance σN² and the lag-1 autocorrelation φ of the deseasonalised residuals. For typical values, detecting 5%/decade needs about 10 to more than 20 years, and level shifts can add 50% or more. The product leads themselves say ~20 years of IMERG is insufficient for long-term trends. For short series, "not detected yet" with a years-to-detect estimate is the honest output.
+
+### Cited Findings
+- Weatherhead et al. 1998 abstract: the number of years needed "is strongly dependent on, and increases with, the magnitude of variance (σN²) and autocorrelation coefficient (φ) of the noise". "For a typical range of values of σN² and φ the number of years of data needed to detect a trend of 5%/decade can vary from ∼10 to >20 years." It concludes that several decades of high-quality data are needed for trends likely to occur in nature. The paper provides formulae for years-to-detect and for the effect of interventions. — [UCAR record](https://impacts.ucar.edu/en/publications/factors-affecting-the-detection-of-trends-statistical-considerati/); [Illinois experts record](https://experts.illinois.edu/en/publications/factors-affecting-the-detection-of-trends-statistical-considerati/)
+- Weatherhead et al. 2000: 15-45 years expected to detect ozone recovery for most regions. — [record](https://impacts.ucar.edu/en/publications/detecting-the-recovery-of-total-column-ozone/)
+- Huffman: "IMERG's ~20-year record is really not sufficient for studies of long-term trends." — [UCAR CDG IMERG](https://climatedataguide.ucar.edu/climate-data/gpm-global-precipitation-measurement-mission)
+
+### Inferences
+- Formula (from memory; the full paper returned 403, so verify before quoting). n* ≈ [ (3.3 σN / |ω0|) · sqrt((1+φ)/(1−φ)) ]^(2/3), where n* is in years, ω0 is the trend magnitude per year, σN is the standard deviation of monthly deseasonalised noise, and φ is lag-1 autocorrelation of the monthly noise. The 3.3 corresponds to 5% significance with 90% probability of detection. The uncertainty of n* is often approximated as a factor exp(±4/(3√n) · sqrt((1+φ)/(1−φ))). The level-shift extension multiplies n* by about (1−τ²... ) terms depending on where the shift falls in the record. Do not implement this extension from memory.
+- Implementation: estimate σN and φ from residuals of the harmonic fit (`statsmodels.tsa.acf`). Report n* for the observed trend, and also for a "student-relevant" trend size (e.g. 5%/decade).
+- Honest framing: "The trend is X ± Y per decade (95% CI includes zero). At this noise level, a trend this size would need about N years to detect. The record has M years." Avoid "no trend". Say "not distinguishable from natural variability with M years of data".
+- Minimum-length guidance (my synthesis): under 10 years, show only, do not test. 10-15 years, test but flag as short, sensitive to start and end years and ENSO phase. Over 30 years, the conventional climatological standard, but not a statistical threshold. Most of the team's GRACE (≈22 yr), OMI (≈20 yr) and IMERG (≈27 yr) series fall in the "detectable only for large trends" zone.
+- Autocorrelation correction is mandatory. Monthly regional anomalies typically have φ of about 0.3-0.8 (GRACE TWS very high). Ignoring it can understate standard errors by a factor sqrt((1+φ)/(1−φ)), which is 2× at φ = 0.6. Use effective n = n(1−φ)/(1+φ), GLSAR, or HAC. For Mann-Kendall, use prewhitening or a Hamed-Rao modified MK (`pymannkendall.hamed_rao_modification_test`).
+
+### Gaps
+- I could not verify the exact Weatherhead equations, the 3.3 constant, or the level-shift multiplier from the primary PDF (403).
+- I found no authoritative "minimum 10/15/30 year" rule for satellite trends. The WMO 30-year climate normal is a convention, not a detection criterion; I did not verify this in a source this session.
+
+## 6. Precipitation and other skewed or bounded variables
+
+### Takeaway
+I found no source in this session specific to transforms for NASA monthly precipitation trends. The recommendations below are inferences. IMERG documentation warns that constellation artifacts matter most for non-mean quantities such as extremes.
+
+### Cited Findings
+- Constellation-change artifacts are "especially true for quantities focusing beyond mean precipitation rate (such as extreme precipitation)". — [UCAR CDG IMERG](https://climatedataguide.ucar.edu/climate-data/gpm-global-precipitation-measurement-mission) (via search summary)
+- Weatherhead et al. 1998 frame detectability in %/decade terms (5%/decade example). — [record](https://impacts.ucar.edu/en/publications/factors-affecting-the-detection-of-trends-statistical-considerati/)
+
+### Inferences
+- Regional monthly mean precipitation over large regions is usually only mildly skewed. Small or arid regions have many near-zero months and heavy right skew. Options: (a) OLS on anomalies with HAC errors, which is fine for large regions; (b) Sen's slope + modified Mann-Kendall, which is robust to skew and outliers and is the usual hydrology choice; (c) log(P + c) or regression on annual totals, though log is problematic with zeros and the choice of c changes results.
+- Report precipitation trends as percent of climatological mean per decade (trend / long-term mean × 100). That is interpretable for students and comparable across regions. Compute it from the absolute trend rather than from log-transformed data, unless you use a log-link GLM (Gamma or Tweedie) in statsmodels.
+- Bounded variables (MODIS NDVI 0-1, cloud fraction, snow cover %, soil moisture near saturation) have heteroscedastic noise near the bounds. Use robust (Sen/MK) or logit transforms if values crowd the bounds, and flag saturation.
+- OMI NO2 is right-skewed and has occasional negative retrievals. Use medians or robust means per month, and filter by row-anomaly and cloud flags first.
+- Run OLS and Sen/MK side by side. If they disagree in sign or significance, report "not robust".
+
+### Gaps
+- No sourced guidance found this session on log vs percent change for satellite precipitation trends, or on Gamma GLMs for monthly precipitation trends. A dedicated search (e.g. Wilks, Statistical Methods in the Atmospheric Sciences; Hamed & Rao 1998; Yue et al. 2002 on prewhitening) is recommended.

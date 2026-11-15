@@ -1,0 +1,67 @@
+# News keyword -> which variables to look at. Plain rules, no AI.
+# A headline matches a topic if it contains any keyword (case-insensitive) and none of the excludes.
+# mode: event    = compare the event window with the same window in earlier years (short events)
+#       longterm = look at the trend over the whole record (slow changes like mining)
+
+# Headlines with any of these words are dropped for every topic (sports and other metaphors).
+_exclude_all: [quarterfinal, semifinal, playoff, championship, defeats, beats, baseball, football, basketball,
+  soccer, cricket, hockey, nfl, nba, mlb, acc, sec, coach, touchdown, tournament, box office, album, stock price,
+  stocks, shares, investors, earnings, ipo]
+
+air_pollution:
+  label: Air pollution, smoke, fireworks
+  keywords: [diwali, firecracker, fireworks, smog, air quality, aqi, air pollution, stubble, crop burning, haze, pollution]
+  require_any: [smog, pollution, air quality, aqi, haze, smoke, toxic air, pm2.5, pm 2.5, firecracker, fireworks]
+  exclude: []
+  variables: [no2, aerosol]
+  mode: event
+
+wildfire:
+  label: Wildfires
+  keywords: [wildfire, bushfire, forest fire, blaze, burned area]
+  exclude: [ceasefire, fired, firing]
+  variables: [aerosol, ndvi, land_surface_temp]
+  mode: event
+
+mining:
+  label: Mining and land clearing
+  keywords: [mining, mine, quarry, deforestation, logging, land clearing]
+  exclude: [bitcoin, crypto, data mining, mined data, minecraft, landmine, land mine, naval mine, sea mine,
+    hitting mine, hit a mine, hitting a mine, mines in hormuz, tanker, mine-clearing, minesweep]
+  variables: [ndvi, land_surface_temp, water_storage]
+  mode: longterm
+
+drought:
+  label: Drought and water shortage
+  keywords: [drought, dry spell, water shortage, water crisis, groundwater, aquifer, crop failure]
+  exclude: []
+  variables: [soil_moisture, precip, water_storage, ndvi]
+  mode: longterm
+
+flood:
+  label: Floods and heavy rain
+  keywords: [flood, flooding, monsoon, heavy rain, cyclone, typhoon, hurricane, cloudburst, landslide]
+  exclude: []
+  variables: [precip, soil_moisture, water_storage]
+  mode: event
+
+heat:
+  label: Heat waves
+  keywords: [heatwave, heat wave, heat dome, record heat, extreme heat, hottest]
+  exclude: []
+  variables: [air_temp, land_surface_temp, surface_air_temp_airs]
+  mode: event
+
+ice:
+  label: Ice and glaciers
+  keywords: [glacier, ice sheet, sea ice, melting ice, permafrost, ice loss]
+  exclude: [cruise, cruises, national park lodge, glacier bay tours]
+  variables: [water_storage, air_temp]
+  mode: longterm
+
+volcano:
+  label: Volcanic eruptions
+  keywords: [volcano, eruption, ash cloud, lava]
+  exclude: [volcano vista, volcanoes national park lodge]
+  variables: [aerosol, no2]
+  mode: event

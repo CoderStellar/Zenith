@@ -1,0 +1,256 @@
+# One entry per variable. Add a variable = add an entry here. Nothing else changes.
+#
+# method:
+#   giovanni - Giovanni's area-averaging service via Harmony. Returns the box-mean series as CSV
+#              in seconds. Falls back to harmony subsetting if it errors.
+#   harmony  - NASA Harmony subsets on the server (bbox + variable). Small downloads.
+#   download - pull whole granules with earthaccess, crop locally. For collections Harmony
+#              does not serve (MODIS CMG on LP DAAC) or single-file records (GRACE).
+# cadence: monthly | daily  (daily is averaged to monthly; opt-in because it is thousands of files)
+# domain: land | ocean | global  (what the product covers; the valid-fraction column tells you per box)
+#
+# Variable names were picked from product docs. Run `python -m earthpull inspect <id>` once
+# with real credentials to confirm each name against an actual file before trusting it.
+
+air_temp:
+  caveat: "Benchmark (Rantanen et al. 2022, 1980-2021): MERRA-2 warms less than the observational average, Arctic +0.45 vs +0.73 C/decade, globe +0.14 vs +0.19. Direction and Arctic amplification (3.2x) are reproduced; cross-check with AIRS where possible."
+  name: Air temperature at 2 m
+  instrument: MERRA-2 (model)
+  short_name: M2TMNXSLV
+  version: "5.12.4"
+  variable: T2M
+  method: harmony
+  cadence: monthly
+  domain: global
+
+aerosol:
+  name: Aerosol optical depth (haze)
+  event_twin: aerosol_daily
+  instrument: MERRA-2 (model)
+  short_name: M2TMNXAER
+  version: "5.12.4"
+  variable: TOTEXTTAU
+  method: harmony
+  cadence: monthly
+  domain: global
+
+precip:
+  caveat: "IMERG's developers say it is not a climate data record and ~20 years is not enough for long-term trend studies; treat trends as indicative."
+  name: Precipitation rate
+  instrument: GPM IMERG (satellite)
+  short_name: GPM_3IMERGM
+  version: "07"
+  variable: precipitation
+  harmony_variable: Grid/precipitation
+  method: giovanni
+  giovanni_id: GPM_3IMERGM_07_precipitation
+  event_twin: precip_daily
+  units: mm/hr
+  cadence: monthly
+  domain: global
+
+soil_moisture:
+  name: Soil moisture, top 10 cm
+  instrument: GLDAS Noah (model)
+  short_name: GLDAS_NOAH025_M
+  version: "2.1"
+  variable: SoilMoi0_10cm_inst
+  method: giovanni
+  giovanni_id: GLDAS_NOAH025_M_2_1_SoilMoi0_10cm_inst
+  units: kg m-2
+  cadence: monthly
+  domain: land
+
+evaporation:
+  name: Evapotranspiration
+  instrument: GLDAS Noah (model)
+  short_name: GLDAS_NOAH025_M
+  version: "2.1"
+  variable: Evap_tavg
+  method: giovanni
+  giovanni_id: GLDAS_NOAH025_M_2_1_Evap_tavg
+  units: kg m-2 s-1
+  cadence: monthly
+  domain: land
+
+surface_air_temp_airs:
+  name: Surface air temperature (daytime pass)
+  instrument: AIRS (satellite)
+  short_name: AIRS3STM
+  version: "7.0"
+  variable: SurfAirTemp_A
+  harmony_variable: ascending/Data_Fields/SurfAirTemp_A
+  units: K
+  method: giovanni
+  giovanni_id: AIRS3STM_7_0_SurfAirTemp_A
+  cadence: monthly
+  domain: global
+
+no2:
+  caveat: "Benchmarks (Krotkov 2016, Duncan 2016): city and power-plant changes are diluted in large boxes (India: +23% for the whole-country box vs +39% over the coal belt; paper: more than +50%). Use tight boxes around the sources."
+  name: Tropospheric NO2 (cloud screened)
+  instrument: OMI (satellite)
+  short_name: OMNO2d
+  version: "003"
+  variable: ColumnAmountNO2TropCloudScreened
+  units: molecules/cm2
+  harmony_variable: HDFEOS/GRIDS/ColumnAmountNO2/Data_Fields/ColumnAmountNO2TropCloudScreened
+  method: giovanni
+  giovanni_id: OMNO2d_003_ColumnAmountNO2TropCloudScreened
+  event_twin: no2_recent
+  cadence: daily
+  domain: global
+
+ndvi:
+  name: Vegetation greenness (NDVI)
+  instrument: MODIS Terra (satellite)
+  short_name: MOD13C2
+  version: "061"
+  variable: CMG 0.05 Deg Monthly NDVI
+  method: download
+  cadence: monthly
+  domain: land
+  note: Global 0.05 deg HDF4 files, no Harmony service. Large download. MODIS Terra record is ending.
+
+land_surface_temp:
+  name: Land surface temperature (day)
+  instrument: MODIS Terra (satellite)
+  short_name: MOD11C3
+  version: "061"
+  variable: LST_Day_CMG
+  method: download
+  cadence: monthly
+  domain: land
+  note: Global 0.05 deg HDF4 files, no Harmony service. Large download.
+
+water_storage:
+  caveat: "Benchmarks (Rodell 2009/2018, Famiglietti 2011, Liu 2022, Velicogna 2020): averages inside an outline recover 0.64-1.02x of published mass trends because GRACE's ~3-degree footprint leaks signal across the edge. Volumes are shown inside the outline and with a 100 km margin as a range. GRACE measures total water; groundwater needs soil moisture and snow removed."
+  mask_var: land_mask  # the file holds ocean values too; land-only averages must drop them
+  known_changes: [2018.42]  # GRACE-FO starts June 2018. Shown on charts, NOT fitted as a step: Velicogna et al.
+  # 2020 found the records continuous, and the step worsened benchmarks (Greenland -285 vs -268 Gt/yr paper).
+  # Add `breaks: [2018.42]` back to fit it.
+  name: Total water storage (incl. groundwater)
+  instrument: GRACE / GRACE-FO (satellite)
+  short_name: TELLUS_GRAC-GRFO_MASCON_CRI_GRID_RL06.3_V4
+  version: null
+  variable: lwe_thickness
+  method: download
+  cadence: monthly
+  domain: land
+  note: One file for the whole record. Gap between missions mid-2017 to mid-2018.
+
+# ---- near-real-time versions, used only by the News lens for recent events (event_only) ----
+no2_recent:
+  name: Tropospheric NO2, daily (recent)
+  instrument: OMI v004 (satellite)
+  short_name: OMNO2d
+  version: "004"
+  variable: ColumnAmountNO2TropCloudScreened
+  harmony_variable: HDFEOS/GRIDS/ColumnAmountNO2/Data_Fields/ColumnAmountNO2TropCloudScreened
+  units: molecules/cm2
+  method: windows
+  cadence: daily
+  domain: global
+  event_only: true
+  note: Updated within days. Giovanni cannot average v004, so only the event windows are cut and averaged here.
+
+precip_daily:
+  name: Precipitation rate, daily (recent)
+  instrument: GPM IMERG Late (satellite)
+  short_name: GPM_3IMERGDL
+  version: "07"
+  variable: precipitation
+  giovanni_id: GPM_3IMERGDL_07_precipitation
+  units: mm/day
+  method: giovanni
+  cadence: daily
+  domain: global
+  event_only: true
+
+aerosol_daily:
+  name: Aerosol optical depth, hourly to daily
+  instrument: MERRA-2 (model)
+  short_name: M2T1NXAER
+  version: "5.12.4"
+  variable: TOTEXTTAU
+  giovanni_id: M2T1NXAER_5_12_4_TOTEXTTAU
+  units: "1"
+  method: giovanni
+  cadence: daily
+  domain: global
+  event_only: true
+
+# ---- helpers for the "links" tool (is air moving from A toward B?); global cubes, hidden from lists ----
+wind_u850:
+  name: Eastward wind at 850 hPa (about 1.5 km up)
+  instrument: MERRA-2 (model)
+  short_name: M2TMNXSLV
+  version: "5.12.4"
+  variable: U850
+  units: m/s
+  method: harmony
+  cadence: monthly
+  domain: global
+  event_only: true
+
+wind_v850:
+  name: Northward wind at 850 hPa (about 1.5 km up)
+  instrument: MERRA-2 (model)
+  short_name: M2TMNXSLV
+  version: "5.12.4"
+  variable: V850
+  units: m/s
+  method: harmony
+  cadence: monthly
+  domain: global
+  event_only: true
+
+aod_modis_aqua:
+  name: Aerosol optical depth, satellite (MODIS Aqua)
+  instrument: MODIS Aqua (satellite)
+  short_name: MYD08_M3
+  version: "6.1"
+  variable: AOD_550_Dark_Target_Deep_Blue_Combined_Mean_Mean
+  units: "1"
+  method: harmony
+  cadence: monthly
+  domain: global
+  note: "1-degree global monthly. Harmony only cuts out the AOD layer (0.3 MB/month instead of 363 MB); the box is cut locally from the global cube. The product used in the challenge video."
+
+snowfall:
+  name: Snowfall rate
+  instrument: GLDAS Noah (model)
+  short_name: GLDAS_NOAH025_M
+  version: "2.1"
+  variable: Snowf_tavg
+  giovanni_id: GLDAS_NOAH025_M_2_1_Snowf_tavg
+  units: kg m-2 s-1
+  method: giovanni
+  cadence: monthly
+  domain: land
+  note: "Multiply by 86400 for mm of water per day."
+
+snow_depth:
+  name: Snow depth
+  instrument: GLDAS Noah (model)
+  short_name: GLDAS_NOAH025_M
+  version: "2.1"
+  variable: SnowDepth_inst
+  giovanni_id: GLDAS_NOAH025_M_2_1_SnowDepth_inst
+  units: m
+  method: giovanni
+  cadence: monthly
+  domain: land
+
+snow_water:
+  name: Water stored in snow (snow water equivalent)
+  instrument: GLDAS Noah (model)
+  short_name: GLDAS_NOAH025_M
+  version: "2.1"
+  variable: SWE_inst
+  giovanni_id: GLDAS_NOAH025_M_2_1_SWE_inst
+  units: kg m-2
+  method: giovanni
+  cadence: monthly
+  domain: land
+  note: "kg/m2 equals mm of water."

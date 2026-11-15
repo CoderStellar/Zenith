@@ -1,0 +1,70 @@
+# Known physical links between variables (the "physics check" of the correlation engine). Plain rules, no AI.
+# The engine only says "consistent with A influencing B" when a pair is listed here, the sign of the
+# relationship matches, A leads (or is simultaneous with) B within max_lag months, and the statistics pass.
+#
+# kind: cause  = A can drive B
+#       same   = two measurements of the same quantity (should agree; not a cause)
+#       shared = both come from a common source (e.g. traffic emits NO2 and particles); not A -> B
+# sign: +1 more A goes with more B, -1 more A goes with less B
+
+- {a: precip, b: soil_moisture, kind: cause, sign: 1, max_lag: 1,
+   why: "Rain wets the soil."}
+- {a: precip, b: evaporation, kind: cause, sign: 1, max_lag: 1,
+   why: "Wetter ground and plants have more water to evaporate."}
+- {a: precip, b: water_storage, kind: cause, sign: 1, max_lag: 3,
+   why: "Rain refills soil, lakes and groundwater, which GRACE weighs."}
+- {a: soil_moisture, b: evaporation, kind: cause, sign: 1, max_lag: 0,
+   why: "Moist soil lets more water evaporate."}
+- {a: soil_moisture, b: water_storage, kind: cause, sign: 1, max_lag: 1,
+   why: "Soil water is part of total water storage."}
+- {a: air_temp, b: evaporation, kind: cause, sign: 1, max_lag: 0,
+   why: "Warmer air can take up more water vapour. In dry places this can reverse: hot spells come with dry soil, so there is less water to evaporate."}
+- {a: air_temp, b: soil_moisture, kind: cause, sign: -1, max_lag: 1,
+   why: "Warmer air dries the soil faster."}
+- {a: surface_air_temp_airs, b: evaporation, kind: cause, sign: 1, max_lag: 0,
+   why: "Warmer air can take up more water vapour (satellite temperature). In dry places this can reverse."}
+- {a: aerosol, b: air_temp, kind: cause, sign: -1, max_lag: 0,
+   why: "Haze reflects sunlight and can cool the surface."}
+- {a: aerosol, b: surface_air_temp_airs, kind: cause, sign: -1, max_lag: 0,
+   why: "Haze reflects sunlight and can cool the surface (satellite temperature)."}
+- {a: precip, b: aerosol, kind: cause, sign: -1, max_lag: 0,
+   why: "Rain washes particles out of the air."}
+- {a: precip, b: ndvi, kind: cause, sign: 1, max_lag: 3,
+   why: "Rain helps plants grow greener."}
+- {a: soil_moisture, b: ndvi, kind: cause, sign: 1, max_lag: 2,
+   why: "Plants green up when soil has water."}
+- {a: ndvi, b: evaporation, kind: cause, sign: 1, max_lag: 0,
+   why: "Leafy plants move water from soil to air."}
+- {a: land_surface_temp, b: evaporation, kind: cause, sign: 1, max_lag: 0,
+   why: "Hotter ground evaporates more water."}
+- {a: air_temp, b: surface_air_temp_airs, kind: same, sign: 1, max_lag: 0,
+   why: "Model and satellite measures of near-surface air temperature should agree."}
+- {a: air_temp, b: land_surface_temp, kind: same, sign: 1, max_lag: 0,
+   why: "Air and ground temperature rise and fall together."}
+- {a: no2, b: aerosol, kind: shared, sign: 1, max_lag: 0,
+   why: "Traffic, power plants and fires emit both NO2 and particles."}
+- {a: precip, b: air_temp, kind: cause, sign: -1, max_lag: 1,
+   why: "Rainy, cloudy months are cooler: clouds block sunlight and wet ground uses heat to evaporate water."}
+- {a: precip, b: surface_air_temp_airs, kind: cause, sign: -1, max_lag: 1,
+   why: "Rainy, cloudy months are cooler (satellite temperature)."}
+- {a: snowfall, b: snow_depth, kind: cause, sign: 1, max_lag: 1,
+   why: "More snowfall builds a deeper snowpack."}
+- {a: snowfall, b: snow_water, kind: cause, sign: 1, max_lag: 1,
+   why: "More snowfall stores more water in the snowpack."}
+- {a: air_temp, b: snow_depth, kind: cause, sign: -1, max_lag: 1,
+   why: "Warmer months melt snow and turn snowfall into rain."}
+- {a: air_temp, b: snow_water, kind: cause, sign: -1, max_lag: 1,
+   why: "Warmer months melt the snowpack."}
+- {a: snow_depth, b: snow_water, kind: same, sign: 1, max_lag: 0,
+   why: "Snow depth and the water it holds measure the same snowpack."}
+- {a: snow_water, b: soil_moisture, kind: cause, sign: 1, max_lag: 2,
+   why: "Melting snow soaks into the soil in spring."}
+# MODIS satellite aerosol (aod_modis_aqua): wildfire-smoke rules used by the Pacific-states demo
+- {a: air_temp, b: aod_modis_aqua, kind: cause, sign: 1, max_lag: 1,
+   why: "Hot months dry out vegetation and bring more wildfires, whose smoke makes the air hazier."}
+- {a: soil_moisture, b: aod_modis_aqua, kind: cause, sign: -1, max_lag: 1,
+   why: "Dry soil and vegetation burn more easily, so dry months bring more wildfire smoke."}
+- {a: precip, b: aod_modis_aqua, kind: cause, sign: -1, max_lag: 0,
+   why: "Rain washes particles out of the air and damps fires."}
+- {a: aerosol, b: aod_modis_aqua, kind: same, sign: 1, max_lag: 0,
+   why: "Model (MERRA-2) and satellite (MODIS) measures of aerosol optical depth should agree."}
