@@ -190,3 +190,8 @@ ol.method strong { color: var(--text); }
   .ranking li button.active, .newsitem.active { outline: 2px solid Highlight; }
 }
 @media (max-width: 860px) { .chart-box.tall { height: 320px; } .projbar button.ghost { margin-left: 0; } table.dtable { font-size: .8rem; } }
+
+/* wide tables must scroll inside their card, not widen the page */
+.grid > .card, .grid.two > .card { min-width: 0; }
+.scroll, .tablebox { max-width: 100%; }
+html, body { overflow-x: hidden; }
