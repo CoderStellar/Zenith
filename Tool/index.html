@@ -3,15 +3,17 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
   <title>West Coast Climate Assessment Tool</title>
   <meta name="description" content="NASA Space Apps tool: measured trends in temperature, precipitation, smoke, water storage and soil moisture for Alaska, California, Hawaii, Oregon and Washington, with significance tests.">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=8">
+  <link rel="stylesheet" href="styles.css?v=9">
 </head>
 <body>
+  <a class="skip-link" href="#main">Skip to main content</a>
   <header class="site-header">
     <div class="brand">
       <span class="logo" aria-hidden="true">&#9728;</span>
@@ -34,7 +36,7 @@
     &ldquo;no clear trend yet&rdquo;. Methods and caveats are in the About tab.
   </div>
 
-  <main>
+  <main id="main" tabindex="-1">
     <!-- TAB 1: HOMEPAGE -->
     <section id="panel-home" role="tabpanel" aria-labelledby="tab-home">
       <div class="hero">
@@ -374,6 +376,7 @@
   <script src="data.js?v=9"></script>
   <script src="grids.js?v=6"></script>
   <script src="try.js?v=9"></script>
-  <script src="app.js?v=9"></script>
+  <script src="app.js?v=10"></script>
+  <script src="improve.js?v=1"></script>
 </body>
 </html>
