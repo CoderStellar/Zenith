@@ -97,8 +97,6 @@
   /* ---------- Home: AI summary (pre-written when data.js was built) ---------- */
   if (META.summary) {
     document.getElementById("home-explain").textContent = META.summary.text;
-    document.getElementById("home-explain-src").textContent = META.summary.source === "template"
-      ? "Plain summary from the numbers." : "Written by an AI model from the numbers on this page; every number in it was checked against them.";
   }
 
   /* ---------- Home: KPIs ---------- */
@@ -108,23 +106,71 @@
     const top = names.slice().sort((a, b) => Math.abs(v.pick(b).v) - Math.abs(v.pick(a).v))[0];
     const p = v.pick(top);
     kpiBox.insertAdjacentHTML("beforeend",
-      `<div class="kpi"><div class="k-label">${v.label}</div><div class="k-val">${sign(p.v)} <small>${v.unit}</small></div>
+      `<div class="kpi"><div class="k-label">${v.label}</div><div class="k-val"><span class="num" data-target="${p.v}">${sign(p.v)}</span> <small>${v.unit}</small></div>
        <div class="k-note">Largest change: ${top}<br>${badge(p.verdict)}</div></div>`);
   });
+
+  /* ---------- Home: count KPI figures up when they scroll into view ---------- */
+  {
+    const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const nums = Array.prototype.slice.call(document.querySelectorAll("#kpis .num"));
+    if (!reduce && "IntersectionObserver" in window) {
+      const run = el => {
+        const target = parseFloat(el.dataset.target), dur = 900, t0 = performance.now();
+        const step = now => { const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3); el.textContent = sign(target * e); if (k < 1) requestAnimationFrame(step); else el.textContent = sign(target); };
+        requestAnimationFrame(step);
+      };
+      const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { run(e.target); io.unobserve(e.target); } }), { threshold: 0.5 });
+      nums.forEach(n => io.observe(n));
+    }
+  }
 
   const gridColor = getComputedStyle(document.documentElement).getPropertyValue("--border");
   Chart.defaults.color = getComputedStyle(document.body).color;
   Chart.defaults.borderColor = gridColor;
   Chart.defaults.maintainAspectRatio = false;
 
-  /* ---------- Home: temperature anomaly over time (real yearly means) ---------- */
-  new Chart(document.getElementById("chart-trend"), {
-    type: "line",
-    data: { labels: TREND.years, datasets: names.map(s => ({ label: s, data: TREND.series[s], borderColor: palette[s], backgroundColor: palette[s], borderWidth: 2, pointRadius: 0, tension: .2, spanGaps: true })) },
-    options: { plugins: { legend: { position: "bottom" },
-                          tooltip: { callbacks: { label: c => `${c.dataset.label}: ${sign(c.parsed.y)} °C` } } },
-               scales: { y: { title: { display: true, text: "°C vs " + TREND.baseline + " average" } } } }
-  });
+  /* ---------- Home: how much each state has warmed (stacked horizontal bar by period) ---------- */
+  {
+    const yrs = TREND.years, first = yrs[0], last = yrs[yrs.length - 1];
+    const decades = [];
+    for (let d = Math.floor(first / 10) * 10; d <= last; d += 10) decades.push(d);
+    const decMean = (s, d) => {
+      const vals = yrs.map((y, i) => (y >= d && y < d + 10 ? TREND.series[s][i] : null)).filter(v => v !== null && v !== undefined && !isNaN(v));
+      return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+    };
+    const segLabels = [];
+    for (let i = 1; i < decades.length; i++) segLabels.push(decades[i - 1] + "–" + (i === decades.length - 1 ? last : decades[i]));
+    const warmRamp = ["#ffd27f", "#ffac4a", "#f1622e", "#b11226", "#6b0f1a"];
+    const total = s => { let t = 0; for (let i = 1; i < decades.length; i++) { const a = decMean(s, decades[i]), b = decMean(s, decades[i - 1]); if (a != null && b != null) t += a - b; } return t; };
+    const ordered = names.slice().sort((a, b) => total(a) - total(b));
+    const datasets = segLabels.map((lab, si) => ({
+      label: lab,
+      data: ordered.map(s => { const a = decMean(s, decades[si + 1]), b = decMean(s, decades[si]); return (a != null && b != null) ? +(a - b).toFixed(3) : 0; }),
+      backgroundColor: warmRamp[Math.min(si, warmRamp.length - 1)], borderWidth: 0
+    }));
+    const inkColor = getComputedStyle(document.body).color;
+    const totalLabels = {
+      id: "totalLabels",
+      afterDatasetsDraw(chart) {
+        const { ctx, scales: { x, y } } = chart;
+        ctx.save(); ctx.font = "600 12px 'Inter Tight', sans-serif"; ctx.fillStyle = inkColor; ctx.textBaseline = "middle"; ctx.textAlign = "left";
+        ordered.forEach(s => { const t = total(s); ctx.fillText(sign(t) + " °C", x.getPixelForValue(t) + 8, y.getPixelForValue(s)); });
+        ctx.restore();
+      }
+    };
+    new Chart(document.getElementById("chart-trend"), {
+      type: "bar",
+      data: { labels: ordered, datasets },
+      options: { indexAxis: "y", layout: { padding: { right: 52 } },
+        plugins: { legend: { position: "bottom" },
+                   title: { display: true, text: "Warming by period, " + first + "–" + last, color: inkColor, font: { size: 13 }, padding: { bottom: 8 } },
+                   tooltip: { callbacks: { title: items => ordered[items[0].dataIndex], label: c => "Warming " + c.dataset.label + ": " + sign(c.parsed.x) + " °C",
+                                           footer: items => "Total " + first + "–" + last + ": " + sign(total(ordered[items[0].dataIndex])) + " °C" } } },
+        scales: { x: { stacked: true, title: { display: true, text: "°C of warming (segments add up to the total)" } }, y: { stacked: true } } },
+      plugins: [totalLabels]
+    });
+  }
 
   /* ---------- Home: state comparison with 95% ranges ---------- */
   const homeVar = document.getElementById("home-var");
@@ -183,6 +229,97 @@
     data: { labels: SEASONAL.months, datasets: names.map(s => ({ label: s, data: SEASONAL.series[s], borderColor: palette[s], backgroundColor: palette[s], borderWidth: 2, pointRadius: 2, tension: .3 })) },
     options: { plugins: { legend: { position: "bottom" } }, scales: { y: { title: { display: true, text: "mm per month" } } } }
   });
+
+  /* ---------- Home: temperature projection to 2050 (OLS, autocorrelation-adjusted 95% band) ---------- */
+  const projState = document.getElementById("proj-state");
+  if (projState && window.TREND) {
+    fill(projState, names.map(s => [s, s]));
+    function ols(xs, ys) {
+      const n = xs.length, mx = xs.reduce((a, b) => a + b, 0) / n, my = ys.reduce((a, b) => a + b, 0) / n;
+      let sxx = 0, sxy = 0;
+      for (let i = 0; i < n; i++) { sxx += (xs[i] - mx) ** 2; sxy += (xs[i] - mx) * (ys[i] - my); }
+      const b = sxy / sxx, a = my - b * mx, res = xs.map((x, i) => ys[i] - (a + b * x));
+      const s2 = res.reduce((s, r) => s + r * r, 0) / (n - 2);
+      let num = 0, den = 0;
+      for (let i = 1; i < n; i++) num += res[i] * res[i - 1];
+      for (let i = 0; i < n; i++) den += res[i] * res[i];
+      let r1 = den ? num / den : 0; if (r1 < 0) r1 = 0;
+      const neff = Math.max(4, Math.min(n, n * (1 - r1) / (1 + r1)));
+      return { a, b, mx, sxx, s2, neff };
+    }
+    const proj = new Chart(document.getElementById("chart-proj"), {
+      type: "line", data: { labels: [], datasets: [] },
+      options: { plugins: { legend: { position: "bottom", labels: { filter: it => !it.text.startsWith("_") } } },
+                 scales: { y: { title: { display: true, text: "°C vs " + TREND.baseline + " average" } }, x: { title: { display: true, text: "year" } } } }
+    });
+    function updateProj() {
+      const s = projState.value, z = 1.96, endY = 2050, xs = [], ys = [];
+      TREND.years.forEach((y, i) => { const v = TREND.series[s][i]; if (v != null && !isNaN(v)) { xs.push(y); ys.push(v); } });
+      const m = ols(xs, ys), startY = xs[0], lastData = xs[xs.length - 1], labels = [], line = [], lo = [], hi = [];
+      for (let y = startY; y <= endY; y++) {
+        labels.push(y);
+        const fit = m.a + m.b * y, se = Math.sqrt(m.s2 * (1 / m.neff + (y - m.mx) ** 2 / m.sxx));
+        line.push(fit); lo.push(fit - z * se); hi.push(fit + z * se);
+      }
+      const obs = labels.map(y => { const i = TREND.years.indexOf(y); return i >= 0 ? TREND.series[s][i] : null; });
+      proj.data.labels = labels;
+      proj.data.datasets = [
+        { label: "observed", data: obs, borderColor: "#aab2b8", backgroundColor: "#aab2b8", pointRadius: 2, showLine: false },
+        { label: "trend", data: labels.map((y, i) => y <= lastData ? line[i] : null), borderColor: palette[s], borderWidth: 2.5, pointRadius: 0, spanGaps: false },
+        { label: "projection to 2050", data: labels.map((y, i) => y >= lastData ? line[i] : null), borderColor: palette[s], borderWidth: 2.5, borderDash: [6, 4], pointRadius: 0, spanGaps: false },
+        { label: "95% range", data: hi, borderColor: "transparent", backgroundColor: palette[s] + "22", pointRadius: 0, fill: "+1" },
+        { label: "_lo", data: lo, borderColor: "transparent", pointRadius: 0, fill: false }
+      ];
+      proj.update();
+      const at = m.a + m.b * 2050, seEnd = Math.sqrt(m.s2 * (1 / m.neff + (2050 - m.mx) ** 2 / m.sxx)), rate = m.b * 10;
+      document.getElementById("proj-note").textContent =
+        `If the ${startY}–${lastData} trend of ${sign(rate)} °C per decade holds, ${s}'s yearly temperature reaches about ${sign(at)} °C above the ${TREND.baseline} average by 2050 (95% range ${sign(at - z * seEnd)} to ${sign(at + z * seEnd)}). A straight-line extrapolation with the record's year-to-year scatter, not a climate-model forecast.`;
+    }
+    projState.addEventListener("change", updateProj); updateProj();
+  }
+
+  /* ---------- Home: What/Why/Who/How carousel (one full panel at a time) ---------- */
+  {
+    const car = document.getElementById("intro-carousel");
+    const box = car && car.querySelector(".intro-scroll");
+    if (car && box) {
+      const panels = Array.prototype.slice.call(box.querySelectorAll(".intro-grid > article"));
+      const dotsWrap = document.getElementById("intro-dots");
+      const prev = car.querySelector(".prev"), next = car.querySelector(".next");
+      const base = () => panels[0].offsetLeft;
+      panels.forEach((p, i) => {
+        const d = document.createElement("button");
+        d.type = "button"; d.className = "dot"; d.setAttribute("aria-label", "Go to " + (p.querySelector("h3") ? p.querySelector("h3").textContent : "panel " + (i + 1)));
+        d.addEventListener("click", () => go(i));
+        dotsWrap.appendChild(d);
+      });
+      const dots = Array.prototype.slice.call(dotsWrap.children);
+      let cur = 0, snapT;
+      function paint() { dots.forEach((d, i) => d.setAttribute("aria-current", i === cur ? "true" : "false")); prev.disabled = cur === 0; next.disabled = cur === panels.length - 1; }
+      function nearest() { const sl = box.scrollLeft; let best = 0, bd = Infinity; panels.forEach((p, i) => { const dd = Math.abs((p.offsetLeft - base()) - sl); if (dd < bd) { bd = dd; best = i; } }); return best; }
+      function go(i) {
+        cur = Math.max(0, Math.min(panels.length - 1, i));
+        paint();
+        // mandatory snap can revert a programmatic scroll, so lift it for the move, then restore it for swipes
+        box.style.scrollSnapType = "none";
+        box.scrollTo({ left: panels[cur].offsetLeft - base(), behavior: "smooth" });
+        clearTimeout(snapT); snapT = setTimeout(() => { box.style.scrollSnapType = ""; }, 500);
+      }
+      prev.addEventListener("click", () => go(cur - 1));
+      next.addEventListener("click", () => go(cur + 1));
+      let t; box.addEventListener("scroll", () => { clearTimeout(t); t = setTimeout(() => { cur = nearest(); paint(); }, 90); });
+      paint();
+    }
+  }
+
+  /* ---------- Home: subtle reveal-on-scroll animation (respects reduced motion) ---------- */
+  if (!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) && "IntersectionObserver" in window) {
+    const io = new IntersectionObserver(es => {
+      let i = 0;
+      es.forEach(e => { if (e.isIntersecting) { e.target.style.transitionDelay = (i * 60) + "ms"; i++; e.target.classList.add("in"); io.unobserve(e.target); } });
+    }, { threshold: 0.1 });
+    document.querySelectorAll("#panel-home .card, #panel-home .kpi, #panel-home .intro, #panel-home .hero.slim").forEach(el => { el.classList.add("reveal"); io.observe(el); });
+  }
 
   /* ---------- Home: what drives what (correlation engine, per state) ---------- */
   const VNAME = { air_temp: "Air temperature", precip: "Precipitation", soil_moisture: "Soil moisture", water_storage: "Water storage", aod_modis_aqua: "Smoke & haze" };
