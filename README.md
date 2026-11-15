@@ -4,7 +4,7 @@ NASA Space Apps Challenge 2026, "Be an Earth System Trend Detective". A tool tha
 variables for any region, builds the time series, measures the rate of change, tests whether it is significant,
 finds which variables move together, and explains the results in plain language.
 
-**Live site (static part):** https://coderstellar.github.io/Zenith/
+**Live site (static part):** https://turtlerecall.us/
 
 ## What is in this repo
 
