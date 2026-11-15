@@ -3,57 +3,76 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>West Coast Climate Assessment Tool</title>
+  <title>Zenith &mdash; West Coast Climate Assessment</title>
   <meta name="description" content="NASA Space Apps tool: measured trends in temperature, precipitation, smoke, water storage and soil moisture for Alaska, California, Hawaii, Oregon and Washington, with significance tests.">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=8">
+  <link rel="stylesheet" href="styles.css?v=14">
 </head>
 <body>
   <header class="site-header">
     <div class="brand">
       <span class="logo" aria-hidden="true">&#9728;</span>
       <div>
-        <h1>West Coast Climate Assessment</h1>
-        <p>Alaska &middot; California &middot; Hawaii &middot; Oregon &middot; Washington</p>
+        <h1>Zenith</h1>
+        <p class="tagline">A West Coast Climate Assessment Tool for Alaska &middot; California &middot; Hawaii &middot; Oregon &middot; Washington</p>
       </div>
     </div>
     <nav class="tabs" role="tablist" aria-label="Sections">
-      <button role="tab" id="tab-home" aria-controls="panel-home" aria-selected="true">Homepage</button>
+      <button role="tab" id="tab-home" aria-controls="panel-home" aria-selected="true">Home</button>
       <button role="tab" id="tab-try" aria-controls="panel-try" aria-selected="false">Try it out yourself</button>
       <button role="tab" id="tab-map" aria-controls="panel-map" aria-selected="false">Map &amp; States</button>
       <button role="tab" id="tab-about" aria-controls="panel-about" aria-selected="false">About</button>
     </nav>
   </header>
 
-  <div class="banner" role="note">
-    <strong>Real NASA data</strong>, averaged over each state's outline (generated <span id="data-date"></span>).
-    Every trend comes with a 95% range and a verdict from a significance test; faded colours mean
-    &ldquo;no clear trend yet&rdquo;. Methods and caveats are in the About tab.
-  </div>
-
   <main>
     <!-- TAB 1: HOMEPAGE -->
     <section id="panel-home" role="tabpanel" aria-labelledby="tab-home">
-      <div class="hero">
-        <h2>What is changing in the Pacific states, and how sure are we?</h2>
-        <p>Measured trends in air temperature, precipitation, summer smoke, water storage and soil moisture from NASA satellites and models, each tested for statistical significance.</p>
-      </div>
+      <section class="intro" aria-labelledby="intro-h">
+        <h2 id="intro-h" class="hero-q">What is changing in the Pacific states, and how sure are we?</h2>
+        <div class="carousel" id="intro-carousel">
+          <button class="car-arrow prev" type="button" aria-label="Previous panel">&lsaquo;</button>
+          <div class="intro-scroll" tabindex="0" role="region" aria-label="What, why, who and how this tool works">
+          <div class="intro-grid">
+          <article>
+            <h3>What it is</h3>
+            <p>Measured trends in temperature, rain, smoke, water storage and soil moisture for the US West Coast: Alaska, California, Hawaii, Oregon and Washington.</p>
+          </article>
+          <article>
+            <h3>Why it exists</h3>
+            <p>Choosing a region and the variables to look at is hard. Then you need to know whether they are really changing, and whether one moves with another. NASA&rsquo;s raw data does not explain itself. This tool tests each trend, finds which variables move together, and explains the result in plain language using only the computed numbers. It never claims cause.</p>
+            <p>Its link-finder was run against 25 published results and matched 24.</p>
+          </article>
+          <article>
+            <h3>Who it is for</h3>
+            <p>Anyone who needs to see what is changing without being a climate scientist: students and teachers, journalists, local planners. Researchers will find the tests, the correlation engine and the sources in About, and can try any place on Earth in &ldquo;Try it out yourself&rdquo;.</p>
+          </article>
+          <article>
+            <h3>How it works</h3>
+            <p><strong>Data:</strong> NASA satellite and climate-model records, mostly 1980&ndash;2024 (rain from 2001, water storage from 2003), averaged over each state&rsquo;s outline. Generated <span id="data-date"></span>.</p>
+            <p><strong>Test:</strong> we fit a straight line and ask whether the change is bigger than normal year-to-year swings. &ldquo;Clear rise&rdquo; or &ldquo;clear fall&rdquo; means it is unlikely to be chance (95% confidence). &ldquo;No clear trend yet&rdquo; (faded colours) means the change so far is within normal swings, so it could still be noise. Details in About.</p>
+          </article>
+          </div>
+          </div>
+          <button class="car-arrow next" type="button" aria-label="Next panel">&rsaquo;</button>
+          <div class="car-dots" id="intro-dots"></div>
+        </div>
+      </section>
 
       <article class="card explain">
-        <h3>What this means</h3>
+        <h3>Latest climate trends in the West Coast</h3>
         <p id="home-explain" class="lede"></p>
-        <p id="home-explain-src" class="sub"></p>
       </article>
 
       <div class="kpis" id="kpis"></div>
 
       <div class="grid two">
         <article class="card">
-          <h3>Temperature anomaly over time</h3>
-          <p class="sub">Yearly state-average air temperature, &deg;C relative to the 1991&ndash;2020 average (MERRA-2, 1980&ndash;2024)</p>
+          <h3>How much each state has warmed</h3>
+          <p class="sub">Total rise in yearly air temperature since 1980, split by the period it happened in (MERRA-2 state average). Longer bar = more warming.</p>
           <div class="chart-box"><canvas id="chart-trend"></canvas></div>
         </article>
         <article class="card">
@@ -73,7 +92,7 @@
             <select id="home-state"></select>
           </label>
           <div class="chart-box"><canvas id="chart-radar"></canvas></div>
-          <p class="sub">Each axis ranks the state's trend from lowest (centre) to highest (edge) among the five states. Exact values:</p>
+          <p class="sub">Each axis ranks the state&rsquo;s trend from lowest (centre) to highest (edge) among the five states. Exact values:</p>
           <ul class="profile" id="radar-detail"></ul>
         </article>
         <article class="card">
@@ -83,8 +102,15 @@
         </article>
       </div>
 
+      <article class="card">
+        <h3>Where the warming is heading: projection to 2050</h3>
+        <label class="inline">State <select id="proj-state"></select></label>
+        <div class="chart-box tall"><canvas id="chart-proj"></canvas></div>
+        <p class="sub" id="proj-note"></p>
+      </article>
+
       <div class="hero slim">
-        <h2>What drives what?</h2>
+        <h2>Which metrics move together, and what&rsquo;s actually driving them?</h2>
         <p class="sub">The correlation engine compares the variables month by month after removing seasons and long-term trends, so two things that merely both drift are not counted as linked. A link only reaches &ldquo;consistent with A influencing B&rdquo; if a known physical mechanism fits. It never says &ldquo;causes&rdquo;.</p>
       </div>
       <div class="grid two">
@@ -258,6 +284,7 @@
           <a href="#guardrails">Guardrails</a>
           <a href="#run">Run it</a>
           <a href="#sources">Sources</a>
+          <a href="#team">Team CoderStellar</a>
         </nav>
 
         <article id="methodology" class="card">
@@ -331,7 +358,7 @@
             <li><strong>Not a forecast.</strong> Past trends do not predict the future, and nothing here is emergency, insurance, planning or legal advice.</li>
             <li><strong>Resolution limits.</strong> State averages hide large local differences. GRACE's footprint is about 300 km, so Hawaii's water-storage trend is not reliable, and state totals leak across borders (shown as a range).</li>
             <li><strong>Relative charts.</strong> The change profile ranks these five states against each other only.</li>
-            <li><strong>Tested against published studies.</strong> 25 checks against real publications. The tests show a strong 96% accuracy against real research. The dataset limitations they revealed are listed below.</li>
+            <li><strong>Tested against published studies.</strong> All 25 checks against published studies were run; 24 matched the published result (96%), and the one miss is explained by the dataset. The dataset limitations they revealed are listed below.</li>
             <li><strong>Attribution.</strong> Built with NASA open data. Not affiliated with or endorsed by NASA.</li>
             <li><strong>Privacy and accessibility.</strong> No accounts, tracking or personal data. Keyboard-navigable tabs, labelled controls, and text versions (ranking list, detail table, profile list) of every chart.</li>
           </ul>
@@ -361,19 +388,28 @@
           </ul>
           <p class="sub">Methods references: Santer et al. 2008 (effective sample size); Sen 1968 (Theil&ndash;Sen slope); Bretherton et al. 1999 (correlation significance); Benjamini &amp; Hochberg 1995 and Wilks 2016 (multiple testing); Granger 1969; Weatherhead et al. 1998 (years needed to detect a trend); IPCC AR6 WG1 Ch. 2. Software: Python (numpy, pandas, xarray, scipy, statsmodels, pymannkendall, regionmask, geopandas, earthaccess, harmony-py, FastAPI), Leaflet, Chart.js.</p>
         </article>
+
+        <article id="team" class="card">
+          <h2>Team CoderStellar</h2>
+          <p>CoderStellar is a group of graduate students and recent graduates &mdash; tech and space enthusiasts who love solving problems and building tools.</p>
+          <ul class="team">
+            <li><strong>Aarushi Singh</strong><span>M.S. Information Management</span></li>
+            <li><strong>Anushka Singh</strong><span>M.S. Computer Science</span></li>
+            <li><strong>Uday Kasturi</strong><span>M.Eng. Cybersecurity</span></li>
+            <li><strong>Darshan V.L.</strong><span>M.Eng. Software Engineering</span></li>
+          </ul>
+        </article>
       </div>
     </section>
   </main>
 
-  <footer class="site-footer">
-    Built for NASA Space Apps Challenge. Not affiliated with or endorsed by NASA.
-  </footer>
+  <footer class="site-footer"></footer>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="data.js?v=9"></script>
   <script src="grids.js?v=6"></script>
   <script src="try.js?v=9"></script>
-  <script src="app.js?v=9"></script>
+  <script src="app.js?v=13"></script>
 </body>
 </html>
