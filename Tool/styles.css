@@ -17,7 +17,7 @@ code { background: var(--surface-2); padding: 1px 6px; font-size: .9em; }
 :focus-visible { outline: 2px solid var(--text); outline-offset: 3px; }
 
 /* Header */
-.site-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 24px; background: rgba(0,0,0,.88); backdrop-filter: blur(6px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 1000; }
+.site-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 24px; background: rgba(0,0,0,.88); backdrop-filter: blur(6px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 1100; }
 .brand { display: flex; align-items: center; gap: 12px; }
 .brand p { margin: 0; color: var(--muted); font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; }
 .logo { font-size: 1.4rem; }
