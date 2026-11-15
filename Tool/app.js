@@ -34,7 +34,8 @@
   }
   const STATES = window.STATES, STATS = window.STATS, META = window.META;
   const names = Object.keys(STATES);
-  const palette = { Alaska: "#3b7dd8", California: "#d9534f", Hawaii: "#1fa37a", Oregon: "#e69f00", Washington: "#8e5bd0" };
+  // Okabe-Ito colour-blind-safe palette (distinguishable with deuteranopia, protanopia, tritanopia); lines also differ by marker and dash style
+  const palette = { Alaska: "#56B4E9", California: "#E69F00", Hawaii: "#009E73", Oregon: "#CC79A7", Washington: "#F0E442" };
 
   /* ---------- Variables: how each real statistic is shown ---------- */
   // pick(s) returns {v, lo, hi, verdict} in display units for state s
@@ -60,7 +61,7 @@
       pick: s => ({ v: STATS[s].water.slope_per_decade, lo: STATS[s].water.ci_low, hi: STATS[s].water.ci_high, verdict: STATS[s].water.verdict })
     },
     soil: {
-      label: "Soil moisture trend", unit: "%/decade", colors: ["#8a5a14", "#1f8a4c"],
+      label: "Soil moisture trend", unit: "%/decade", colors: ["#8a5a14", "#1f5fa8"],
       desc: "Change in water in the top 10 cm of soil, as % of average per decade, 2003-2024 (GLDAS Noah model). Negative = drier soil.",
       pick: s => {
         const d = STATS[s].soil, k = d.pct_per_decade / d.slope_per_decade;
@@ -76,6 +77,7 @@
   const MEANING = { "No clear trend yet": "The change so far is within normal year-to-year swings, so it could still be noise. A longer record may settle it." };
   const badge = verdict => `<span class="verdict ${clear(verdict) ? "clear" : "unclear"}" title="${MEANING[verdict] || ""}">${verdict}</span>`;
 
+  window.VIZ = { names, VARS, keys, palette, badge, clear, sign, fmt, r2 };  // shared with improve.js
   /* ---------- Helpers ---------- */
   function mix(c1, c2, t) {
     const p = c => [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16));
@@ -116,6 +118,7 @@
   Chart.defaults.color = getComputedStyle(document.body).color;
   Chart.defaults.borderColor = gridColor;
   Chart.defaults.maintainAspectRatio = false;
+  if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) Chart.defaults.animation = false;
 
   /* ---------- Home: temperature anomaly over time (real yearly means) ---------- */
   new Chart(document.getElementById("chart-trend"), {
@@ -144,12 +147,12 @@
   function updateBar() {
     const k = homeVar.value;
     bar.data.datasets[0].data = names.map(s => VARS[k].pick(s).v);
-    bar.data.datasets[0].backgroundColor = names.map(s => clear(VARS[k].pick(s).verdict) ? palette[s] : palette[s] + "44");
+    bar.data.datasets[0].backgroundColor = names.map(s => clear(VARS[k].pick(s).verdict) ? palette[s] : (window.vizPattern ? window.vizPattern(palette[s]) : palette[s] + "44"));
     bar.data.datasets[0].borderColor = names.map(s => palette[s]);
     bar.data.datasets[1].data = names.map(s => [VARS[k].pick(s).lo, VARS[k].pick(s).hi]);
     bar.options.scales = { y: { title: { display: true, text: VARS[k].unit } } };
     bar.update();
-    document.getElementById("bar-note").textContent = VARS[k].desc + " Solid bars: clear trend. Faded bars: no clear trend yet. Grey line: 95% range.";
+    document.getElementById("bar-note").textContent = VARS[k].desc + " Solid bars: clear trend. Hatched bars: no clear trend yet. Thin grey bar: 95% range.";
   }
   homeVar.addEventListener("change", updateBar); updateBar();
 
@@ -165,12 +168,12 @@
     data: { labels: keys.map(k => VARS[k].label.replace(" trend", "")), datasets: [{ label: "", data: [], fill: true }] },
     options: { plugins: { legend: { display: false },
                           tooltip: { callbacks: { label: c => `${fmt(keys[c.dataIndex], homeState.value)} (${VARS[keys[c.dataIndex]].pick(homeState.value).verdict})` } } },
-               scales: { r: { min: 0, max: 100, ticks: { display: false } } } }
+               scales: { r: { min: 0, max: 100, ticks: { display: false }, grid: { color: "#4a5056" }, angleLines: { color: "#4a5056" }, pointLabels: { color: "#f1f3f5", font: { size: 13 } } } } }
   });
   function updateRadar() {
     const s = homeState.value, d = radar.data.datasets[0];
     d.label = s; d.data = keys.map(k => norm(k, s));
-    d.borderColor = palette[s]; d.backgroundColor = palette[s] + "44";
+    d.borderColor = palette[s]; d.backgroundColor = palette[s] + "55"; d.borderWidth = 3; d.pointRadius = 5; d.pointBackgroundColor = palette[s];
     radar.update();
     document.getElementById("radar-detail").innerHTML = keys.map(k =>
       `<li><span>${VARS[k].label}</span> <strong>${fmt(k, s)}</strong> ${badge(VARS[k].pick(s).verdict)}</li>`).join("");
@@ -226,9 +229,9 @@
       const c = META.compare[cmpSel.value], rows = c.rows.filter(r => r.r !== null && r.r !== undefined);
       cmp.data.labels = rows.map(r => r.place);
       cmp.data.datasets[0].data = rows.map(r => r.r);
-      cmp.data.datasets[0].backgroundColor = rows.map(r => r.verdict.startsWith("Linked") ? palette[r.place] : palette[r.place] + "44");
+      cmp.data.datasets[0].backgroundColor = rows.map(r => r.verdict.startsWith("Linked") ? palette[r.place] : (window.vizPattern ? window.vizPattern(palette[r.place]) : palette[r.place] + "44"));
       cmp.update();
-      document.getElementById("cmp-summary").textContent = c.summary + " Solid bars: clear link; faded bars: no clear link.";
+      document.getElementById("cmp-summary").textContent = c.summary + " Solid bars: clear link; hatched bars: no clear link.";
     };
     cmpSel.addEventListener("change", renderCmp); renderCmp();
   }
