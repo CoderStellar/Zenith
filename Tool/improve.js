@@ -174,6 +174,8 @@
   $("home-var").addEventListener("change", refreshBar); refreshBar();
   if ($("bar-note")) $("bar-note").setAttribute("aria-live", "polite");
   $("home-var").dispatchEvent(new Event("change"));   // redraw with hatch patterns
+  var homeBar = Chart.getChart("chart-bar");  // make the 95% range bars readable on the dark background
+  if (homeBar) { homeBar.data.datasets[1].backgroundColor = "rgba(241,243,245,0.3)"; homeBar.data.datasets[1].borderColor = "#f1f3f5"; homeBar.update(); }
 
   describe("chart-season", "Line chart: average precipitation in each month, five states",
     "Monthly average precipitation in millimetres, state averages. " + names.map(function (s) {
