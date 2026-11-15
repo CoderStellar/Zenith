@@ -142,3 +142,90 @@ td.hm { width: 64px; height: 40px; text-align: center; border: 1px solid var(--b
 .newsitem .nmeta { font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
 .newsitem.active .nmeta { color: var(--bg); opacity: .7; }
 .newsitem .ntitle { font-size: .95rem; line-height: 1.3; }
+/* Homepage intro: what / why / who / how */
+.intro { padding: 48px 24px 40px; border-bottom: 1px solid var(--border); }
+.intro h2 { font-size: clamp(2rem, 4.5vw, 3.25rem); max-width: 24ch; margin-bottom: 32px; line-height: 1.02; }
+.intro-grid { display: flex; flex-wrap: nowrap; gap: 0; align-items: stretch; }
+.intro-grid article { flex: 0 0 100%; scroll-snap-align: start; padding: 28px 32px; }
+.intro-grid h3 { font-size: .85rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; font-weight: 600; }
+.intro-grid p { margin: 0 0 12px; font-size: 1rem; line-height: 1.5; color: var(--soft); }
+.intro-grid strong { color: var(--text); }
+.intro .start { margin: 32px 0 0; padding-top: 20px; border-top: 1px solid var(--border); font-size: 1rem; color: var(--soft); }
+
+/* ---- UI polish: tagline, tabs, hero question, scroll box, projection, animations ---- */
+.tagline { margin: 4px 0 0; color: var(--soft); font-size: .9rem; letter-spacing: 0; text-transform: none; max-width: 62ch; }
+
+/* Tabs as a clearer segmented control */
+.tabs { gap: 4px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 999px; padding: 4px; }
+.tabs button { padding: 8px 18px; border-bottom: 0; border-radius: 999px; letter-spacing: .04em; transition: background .2s ease, color .2s ease; }
+.tabs button:hover { color: var(--text); background: rgba(255,255,255,.04); }
+.tabs button[aria-selected="true"] { color: var(--accent-ink); background: var(--accent); border-bottom: 0; }
+
+/* Hero question */
+.hero-q { font-size: clamp(2rem, 4.8vw, 3.5rem); line-height: 1.05; max-width: 20ch; margin-bottom: 28px; }
+
+/* Carousel: one full What/Why/Who/How panel at a time */
+.carousel { position: relative; border: 1px solid var(--border); border-radius: 10px; }
+.intro-scroll { overflow-x: auto; overflow-y: hidden; border-radius: 10px; background: var(--surface); scrollbar-width: none; scroll-snap-type: x mandatory; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
+.intro-scroll::-webkit-scrollbar { display: none; }
+.intro-scroll:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+.car-arrow { position: absolute; top: 50%; transform: translateY(-50%); z-index: 3; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--border); background: rgba(7,9,10,.9); color: var(--text); font-size: 1.6rem; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .2s ease, opacity .2s ease; }
+.car-arrow:hover { background: var(--surface-2); }
+.car-arrow.prev { left: -14px; }
+.car-arrow.next { right: -14px; }
+.car-arrow[disabled] { opacity: .28; cursor: default; }
+.car-dots { display: flex; justify-content: center; gap: 10px; margin-top: 16px; }
+.car-dots .dot { width: 9px; height: 9px; padding: 0; border-radius: 50%; border: 1px solid var(--muted); background: transparent; cursor: pointer; transition: background .2s ease, border-color .2s ease; }
+.car-dots .dot[aria-current="true"] { background: var(--text); border-color: var(--text); }
+@media (max-width: 640px) { .car-arrow.prev { left: 4px; } .car-arrow.next { right: 4px; } }
+
+/* Taller charts (projection) */
+.chart-box.tall { height: 380px; }
+
+/* Reveal-on-scroll */
+.reveal { opacity: 0; transform: translateY(18px); transition: opacity .55s ease, transform .55s ease; }
+.reveal.in { opacity: 1; transform: none; }
+.intro h2.hero-q { animation: fadeUp .7s ease both; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; transition: none; }
+  .intro h2.hero-q { animation: none; }
+  html { scroll-behavior: auto; }
+}
+
+/* ---- Preymaker-inspired motion (all reduced-motion safe) ---- */
+.kpi { transition: background .25s ease, transform .25s ease; }
+.kpi:hover { transform: translateX(5px); }
+.grid .card { transition: background .25s ease; }
+.grid .card:hover { background: var(--surface-2); }
+.tabs button[aria-selected="true"] { animation: tabpop .28s ease; }
+@keyframes tabpop { 0% { transform: scale(.9); } 60% { transform: scale(1.04); } 100% { transform: scale(1); } }
+.car-arrow { transition: background .2s ease, transform .2s ease, opacity .2s ease; }
+.car-arrow:hover { transform: translateY(-50%) scale(1.12); }
+.sources li, .toc a { transition: color .2s ease, transform .2s ease; }
+.sources li:hover { transform: translateX(3px); }
+
+/* Ambient concentric-ellipse motif behind the intro */
+.intro { position: relative; overflow: hidden; }
+.intro > * { position: relative; z-index: 1; }
+.intro::before { content: ""; position: absolute; inset: -25% -8% auto auto; width: 68%; height: 150%; z-index: 0; pointer-events: none;
+  background-image: repeating-radial-gradient(ellipse 60% 40% at 82% 42%, transparent 0 58px, rgba(133,144,153,.13) 58px 59px);
+  animation: heroDrift 26s ease-in-out infinite alternate; }
+@keyframes heroDrift { from { transform: translate3d(0,0,0) scale(1); } to { transform: translate3d(-3%, 2%, 0) scale(1.06); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .intro::before { animation: none; }
+  .tabs button[aria-selected="true"] { animation: none; }
+  .kpi:hover { transform: none; }
+  .car-arrow:hover { transform: translateY(-50%); }
+  .sources li:hover { transform: none; }
+}
+
+/* ---- About: boxed sub-tabs + team ---- */
+.toc a { border: 1px solid var(--border); border-radius: 8px; padding: 9px 15px; background: var(--surface); color: var(--text); transition: background .2s ease, border-color .2s ease, transform .2s ease; }
+.toc a:hover { background: var(--surface-2); border-color: var(--muted); transform: translateY(-1px); }
+ul.team { list-style: none; padding: 0; margin: 18px 0 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+ul.team li { border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; display: flex; flex-direction: column; gap: 5px; background: var(--surface); }
+ul.team li strong { font-size: 1.1rem; letter-spacing: -0.01em; }
+ul.team li span { color: var(--muted); font-size: .9rem; }
+@media (prefers-reduced-motion: reduce) { .toc a:hover { transform: none; } }
