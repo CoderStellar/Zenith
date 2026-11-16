@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=16">
+  <link rel="stylesheet" href="styles.css?v=21">
 </head>
 <body>
   <header class="site-header">
@@ -33,33 +33,12 @@
     <section id="panel-home" role="tabpanel" aria-labelledby="tab-home">
       <section class="intro" aria-labelledby="intro-h">
         <h2 id="intro-h" class="hero-q">What is changing in the Pacific states, and how sure are we?</h2>
-        <div class="carousel" id="intro-carousel">
-          <button class="car-arrow prev" type="button" aria-label="Previous panel">&lsaquo;</button>
-          <div class="intro-scroll" tabindex="0" role="region" aria-label="What, why, who and how this tool works">
-          <div class="intro-grid">
-          <article>
-            <h3>What it is</h3>
-            <p>Measured trends in temperature, rain, smoke, water storage and soil moisture for the US West Coast: Alaska, California, Hawaii, Oregon and Washington.</p>
-          </article>
-          <article>
-            <h3>Why it exists</h3>
-            <p>Choosing a region and the variables to look at is hard. Then you need to know whether they are really changing, and whether one moves with another. NASA&rsquo;s raw data does not explain itself. This tool tests each trend, finds which variables move together, and explains the result in plain language using only the computed numbers. It never claims cause.</p>
-            <p>Its link-finder was run against 25 published results and matched 24.</p>
-          </article>
-          <article>
-            <h3>Who it is for</h3>
-            <p>Anyone who needs to see what is changing without being a climate scientist: students and teachers, journalists, local planners. Researchers will find the tests, the correlation engine and the sources in About, and can try any place on Earth in &ldquo;Try it out yourself&rdquo;.</p>
-          </article>
-          <article>
-            <h3>How it works</h3>
-            <p><strong>Data:</strong> NASA satellite and climate-model records, mostly 1980&ndash;2024 (rain from 2001, water storage from 2003), averaged over each state&rsquo;s outline. Generated <span id="data-date"></span>.</p>
-            <p><strong>Test:</strong> we fit a straight line and ask whether the change is bigger than normal year-to-year swings. &ldquo;Clear rise&rdquo; or &ldquo;clear fall&rdquo; means it is unlikely to be chance (95% confidence). &ldquo;No clear trend yet&rdquo; (faded colours) means the change so far is within normal swings, so it could still be noise. Details in About.</p>
-          </article>
-          </div>
-          </div>
-          <button class="car-arrow next" type="button" aria-label="Next panel">&rsaquo;</button>
-          <div class="car-dots" id="intro-dots"></div>
-        </div>
+        <dl class="facts">
+          <div><dt>What</dt><dd>Measured trends for five West Coast states, from NASA satellites and models.</dd></div>
+          <div><dt>Why</dt><dd>Raw data doesn&rsquo;t say what&rsquo;s real. Zenith tests every trend and every link.</dd></div>
+          <div><dt>Who</dt><dd>Students, journalists and planners. Researchers: the full method is in About.</dd></div>
+          <div><dt>How</dt><dd>A trend counts only at 95% confidence, after adjusting for memory between months.</dd></div>
+        </dl>
       </section>
 
       <article class="card explain">
@@ -68,6 +47,14 @@
       </article>
 
       <div class="kpis" id="kpis"></div>
+
+      <section class="diff" aria-labelledby="diff-h">
+        <div class="diff-head">
+          <h2 id="diff-h">Six things Zenith does differently</h2>
+        </div>
+        <ol class="diff-list" id="diff-list"></ol>
+      </section>
+
 
       <div class="grid two">
         <article class="card">
@@ -111,7 +98,7 @@
 
       <div class="hero slim">
         <h2>Which metrics move together, and what&rsquo;s actually driving them?</h2>
-        <p class="sub">The correlation engine compares the variables month by month after removing seasons and long-term trends, so two things that merely both drift are not counted as linked. A link only reaches &ldquo;consistent with A influencing B&rdquo; if a known physical mechanism fits. It never says &ldquo;causes&rdquo;.</p>
+        <p class="sub">Seasons and long-term trends are removed first. A link is named only when a known physical mechanism fits. Never &ldquo;causes&rdquo;.</p>
       </div>
       <div class="grid two">
         <article class="card">

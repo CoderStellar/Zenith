@@ -1,6 +1,6 @@
 (function () {
   /* ---------- Tabs ---------- */
-  const tabs = ["home", "try", "map", "about"];
+  const tabs = ["home", "map", "try", "about"];  // same order as the tab bar (arrow keys follow it)
   let map, mapReady = false;
   function show(name) {
     tabs.forEach(t => {
@@ -92,11 +92,13 @@
   function fill(sel, items) { sel.innerHTML = items.map(([v, l]) => `<option value="${v}">${l}</option>`).join(""); }
 
   /* ---------- Banner and data date ---------- */
-  document.getElementById("data-date").textContent = META.generated;
+  { const dd = document.getElementById("data-date"); if (dd) dd.textContent = META.generated; }
 
   /* ---------- Home: AI summary (pre-written when data.js was built) ---------- */
   if (META.summary) {
-    document.getElementById("home-explain").textContent = META.summary.text;
+    { // first two sentences: the headline findings; the rest is in the tables below
+      const sents = META.summary.text.match(/[\s\S]*?[.!?](?=\s+[A-Z]|\s*$)/g) || [META.summary.text];  // a full stop before a capital, so "29.5" is not a break
+      document.getElementById("home-explain").textContent = sents.slice(0, 2).join("").trim(); }
   }
 
   /* ---------- Home: KPIs ---------- */
@@ -278,37 +280,46 @@
     projState.addEventListener("change", updateProj); updateProj();
   }
 
-  /* ---------- Home: What/Why/Who/How carousel (one full panel at a time) ---------- */
+  /* ---------- Home: What/Why/Who/How carousel (labelled tabs, arrows, swipe; all panels share one height) ---------- */
   {
     const car = document.getElementById("intro-carousel");
-    const box = car && car.querySelector(".intro-scroll");
-    if (car && box) {
-      const panels = Array.prototype.slice.call(box.querySelectorAll(".intro-grid > article"));
-      const dotsWrap = document.getElementById("intro-dots");
+    if (car) {
+      const panels = Array.prototype.slice.call(car.querySelectorAll(".car-panel"));
+      const tabsWrap = car.querySelector(".car-tabs"), count = car.querySelector(".car-count");
       const prev = car.querySelector(".prev"), next = car.querySelector(".next");
-      const base = () => panels[0].offsetLeft;
-      panels.forEach((p, i) => {
-        const d = document.createElement("button");
-        d.type = "button"; d.className = "dot"; d.setAttribute("aria-label", "Go to " + (p.querySelector("h3") ? p.querySelector("h3").textContent : "panel " + (i + 1)));
-        d.addEventListener("click", () => go(i));
-        dotsWrap.appendChild(d);
+      const pad = n => String(n).padStart(2, "0");
+      const tabsEls = panels.map((p, i) => {
+        const b = document.createElement("button");
+        b.type = "button"; b.className = "car-tab"; b.setAttribute("role", "tab");
+        b.id = "car-tab-" + i; p.id = "car-panel-" + i;
+        b.setAttribute("aria-controls", p.id); p.setAttribute("aria-labelledby", b.id);
+        b.textContent = p.querySelector("h3") ? p.querySelector("h3").textContent : "Panel " + (i + 1);
+        b.addEventListener("click", () => go(i));
+        b.addEventListener("keydown", e => {
+          if (e.key === "ArrowRight" || e.key === "ArrowLeft") { e.preventDefault(); go(cur + (e.key === "ArrowRight" ? 1 : -1)); tabsEls[cur].focus(); }
+        });
+        tabsWrap.appendChild(b);
+        return b;
       });
-      const dots = Array.prototype.slice.call(dotsWrap.children);
-      let cur = 0, snapT;
-      function paint() { dots.forEach((d, i) => d.setAttribute("aria-current", i === cur ? "true" : "false")); prev.disabled = cur === 0; next.disabled = cur === panels.length - 1; }
-      function nearest() { const sl = box.scrollLeft; let best = 0, bd = Infinity; panels.forEach((p, i) => { const dd = Math.abs((p.offsetLeft - base()) - sl); if (dd < bd) { bd = dd; best = i; } }); return best; }
+      let cur = 0;
       function go(i) {
         cur = Math.max(0, Math.min(panels.length - 1, i));
-        paint();
-        // mandatory snap can revert a programmatic scroll, so lift it for the move, then restore it for swipes
-        box.style.scrollSnapType = "none";
-        box.scrollTo({ left: panels[cur].offsetLeft - base(), behavior: "smooth" });
-        clearTimeout(snapT); snapT = setTimeout(() => { box.style.scrollSnapType = ""; }, 500);
+        panels.forEach((p, k) => { p.classList.toggle("on", k === cur); p.setAttribute("aria-hidden", k !== cur); });
+        tabsEls.forEach((b, k) => { b.setAttribute("aria-selected", k === cur); b.tabIndex = k === cur ? 0 : -1; });
+        count.textContent = pad(cur + 1) + " / " + pad(panels.length);
+        prev.disabled = cur === 0; next.disabled = cur === panels.length - 1;
       }
       prev.addEventListener("click", () => go(cur - 1));
       next.addEventListener("click", () => go(cur + 1));
-      let t; box.addEventListener("scroll", () => { clearTimeout(t); t = setTimeout(() => { cur = nearest(); paint(); }, 90); });
-      paint();
+      let x0 = null;  // swipe on touch screens
+      const stage = car.querySelector(".car-stage");
+      stage.addEventListener("touchstart", e => { x0 = e.touches[0].clientX; }, { passive: true });
+      stage.addEventListener("touchend", e => {
+        if (x0 === null) return;
+        const dx = e.changedTouches[0].clientX - x0; x0 = null;
+        if (Math.abs(dx) > 40) go(cur + (dx < 0 ? 1 : -1));
+      });
+      go(0);
     }
   }
 
@@ -472,6 +483,46 @@
   const cav = document.getElementById("caveats");
   if (cav) cav.innerHTML = Object.values(META.datasets).filter(d => d.caveat).map(d =>
     `<li><strong>${d.name}</strong> (${d.product}): ${d.caveat}</li>`).join("");
+
+  /* ---------- Landing: "Six things Zenith does differently" (compact; every number comes from the data) ---------- */
+  (function () {
+    const list = document.getElementById("diff-list");
+    if (!list) return;
+    const f2 = x => (x >= 0 ? "+" : "\u2212") + Math.abs(x).toFixed(2);
+    const cells = [];
+    const noClear = names.filter(s => /no clear/i.test(STATS[s].precip.verdict || "")).length;
+    const warm = names.filter(s => /clear rise/i.test(STATS[s].temp.verdict || "")).length;
+    cells.push(`<h3>Says when it doesn\u2019t know</h3><p class="r-big">Rain: no clear trend, ${noClear} of ${names.length}</p>
+      <p class="r-note">Temperature: clear rise, ${warm} of ${names.length}.</p>`);
+    const ca = (STATS.California && STATS.California.links && STATS.California.links.pairs) || [];
+    const rw = ca.find(p => p.a === "precip" && p.b === "water_storage");
+    if (rw) cells.push(`<h3>Won\u2019t claim a weak link</h3><p class="r-big">r ${rw.r.toFixed(2)} \u2192 ${rw.partial_r.toFixed(2)}</p>
+      <p class="r-note">California rain vs. water storage, once soil moisture is controlled.</p>`);
+    const cmp = (META.compare || []).find(c => c.a === "air_temp" && c.b === "soil_moisture");
+    if (cmp) {
+      const mx = Math.max(...cmp.rows.map(r => Math.abs(r.r)), 0.01);
+      const bars = cmp.rows.map(r => { const w = Math.round(100 * Math.abs(r.r) / mx);
+        return `<div class="flip"><span>${r.place}</span><div class="neg">${r.r < 0 ? `<span style="width:${w}%"></span>` : ""}</div>` +
+               `<div class="pos">${r.r > 0 ? `<span style="width:${w}%"></span>` : ""}</div><span class="val">${f2(r.r)}</span></div>`; }).join("");
+      const flipped = cmp.rows.filter(r => r.r > 0).map(r => r.place);
+      cells.push(`<h3>Flags when places disagree</h3><div>${bars}</div>
+        <p class="r-note">Warmer means drier soil${flipped.length ? `, except ${flipped.join(" and ")}` : ""}.</p>`);
+    }
+    cells.push(`<h3>Checked against published science</h3><p class="r-big">13 of 16 match</p>
+      <p class="r-note">The 3 misses are shown, with reasons.</p>
+      <button class="r-link" type="button" data-go="about">See the benchmarks</button>`);
+    cells.push(`<h3>Summaries can\u2019t invent numbers</h3><p class="r-big">Every number checked</p>
+      <p class="r-note">Against the computed results, before you see it.</p>`);
+    cells.push(`<h3>From the news to NASA data</h3><p class="r-big">Any box on Earth</p>
+      <p class="r-note">Click a headline; the same tests run.</p>
+      <button class="r-link" type="button" data-go="try">Try it out yourself</button>`);
+    list.innerHTML = cells.map(c => `<li>${c}</li>`).join("");
+    list.querySelectorAll("[data-go]").forEach(b => b.addEventListener("click", () => {
+      show(b.dataset.go);
+      if (b.dataset.go === "about") setTimeout(() => { const t = document.getElementById("benchmarks"); if (t) t.scrollIntoView(); }, 50);
+      else window.scrollTo(0, 0);
+    }));
+  })();
 
   /* ---------- Initial tab from URL hash ---------- */
   show(tabs.includes(h0) ? h0 : "home");
