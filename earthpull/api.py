@@ -110,7 +110,7 @@ def _trend_map(vid: str, src: dict, box: BBox, start: str, end: str, max_cells: 
     dlat = float(abs(lat[1] - lat[0])) if len(lat) > 1 else 1.0
     dlon = float(abs(lon[1] - lon[0])) if len(lon) > 1 else 1.0
     return {"lat": lat.tolist(), "lon": lon.tolist(), "dlat": dlat, "dlon": dlon,
-            "slope": ds.slope_per_decade.values.tolist(), "verdict": ds.verdict.values.astype(int).tolist(),
+            "slope": (ds.slope_per_decade.values * float(src.get("display_scale", 1.0))).tolist(), "verdict": ds.verdict.values.astype(int).tolist(),
             "alpha_fdr": ds.attrs.get("alpha_fdr"), "coarsened_by": k}
 
 
@@ -127,7 +127,8 @@ def analyze(w: float, s: float, e: float, n: float, var: str = Query(...), start
     row = rep.iloc[0].to_dict() if len(rep) else {}
     if var not in wide or wide[var].notna().sum() < 24:
         raise HTTPException(422, f"no usable data: {row.get('status', 'nothing returned')}")
-    ser = wide[var]
+    sc = float(src.get("display_scale", 1.0))  # e.g. NO2: molecules/cm2 -> 10^15 molecules/cm2, so numbers stay readable
+    ser = wide[var] * sc
     breaks = tuple(src.get("breaks", ()))
     r = trend_report(ser, breaks)
     # monthly series on the regular calendar, anomalies, fitted line and its 95% band
@@ -157,7 +158,7 @@ def analyze(w: float, s: float, e: float, n: float, var: str = Query(...), start
             sens.append({"start": ys, "rate": t["slope_per_decade"], "lo": t["ci_low"], "hi": t["ci_high"], "p": t["p_ar1"]})
     out = {
         "variable": {"id": var, "name": src["name"], "instrument": src["instrument"],
-                     "units": row.get("units") or src.get("units", ""), "caveat": src.get("caveat", ""),
+                     "units": src.get("display_units") or row.get("units") or src.get("units", ""), "caveat": src.get("caveat", ""),
                      "product": f"{src['short_name']} {src.get('version') or ''}".strip(),
                      "known_changes": list(src.get("known_changes", ())) + list(breaks)},
         "region": {"w": box.west, "s": box.south, "e": box.east, "n": box.north, "via": row.get("via")},

@@ -94,6 +94,8 @@ no2:
   version: "003"
   variable: ColumnAmountNO2TropCloudScreened
   units: molecules/cm2
+  display_scale: 1.0e-15        # show NO2 as 10^15 molecules/cm2 (the usual way to write it)
+  display_units: "10^15 molecules/cm2"
   harmony_variable: HDFEOS/GRIDS/ColumnAmountNO2/Data_Fields/ColumnAmountNO2TropCloudScreened
   method: giovanni
   giovanni_id: OMNO2d_003_ColumnAmountNO2TropCloudScreened
@@ -148,6 +150,8 @@ no2_recent:
   variable: ColumnAmountNO2TropCloudScreened
   harmony_variable: HDFEOS/GRIDS/ColumnAmountNO2/Data_Fields/ColumnAmountNO2TropCloudScreened
   units: molecules/cm2
+  display_scale: 1.0e-15        # show NO2 as 10^15 molecules/cm2 (the usual way to write it)
+  display_units: "10^15 molecules/cm2"
   method: windows
   cadence: daily
   domain: global
