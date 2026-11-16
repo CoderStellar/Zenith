@@ -341,3 +341,12 @@ ul.team li span { color: var(--muted); font-size: .9rem; }
   .facts > div:nth-child(n+3) { border-top: 1px solid var(--border); }
 }
 @media (max-width: 520px) { .facts { grid-template-columns: 1fr; } .facts > div { padding-left: 0 !important; border-left: 0 !important; } .facts > div + div { border-top: 1px solid var(--border); } }
+
+/* News rows: the headline button sets up the analysis; "Read article" opens the story separately */
+.newsrow { display: flex; flex-direction: column; border-bottom: 1px solid var(--border); }
+.newsrow .newsitem { border-bottom: 0; padding-bottom: 6px; }
+.newsrow .nread { align-self: flex-start; margin: 0 4px 12px; font-size: .72rem; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--muted); text-decoration: none; border-bottom: 1px solid transparent; }
+.newsrow .nread:hover, .newsrow .nread:focus-visible { color: var(--text); border-bottom-color: var(--text); }
+.newsrow:has(.newsitem.active) { background: var(--text); }
+.newsrow:has(.newsitem.active) .nread { color: var(--bg); opacity: .75; }

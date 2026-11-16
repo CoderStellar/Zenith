@@ -81,6 +81,16 @@
         const title = document.createElement("span"); title.className = "ntitle";
         title.textContent = it.title + (it.source ? ` (${it.source})` : "");
         b.append(meta, title);
+        // the row: the main button (sets up the analysis) plus a separate link to read the story itself
+        const row = document.createElement("div"); row.className = "newsrow";
+        row.append(b);
+        if (it.link) {
+          const a = document.createElement("a");
+          a.className = "nread"; a.href = it.link; a.target = "_blank"; a.rel = "noopener noreferrer";
+          a.textContent = "Read article \u2197";
+          a.setAttribute("aria-label", `Read the article: ${it.title}${it.source ? " (" + it.source + ")" : ""}, opens in a new tab`);
+          row.append(a);
+        }
         b.addEventListener("click", () => {
           document.querySelectorAll(".newsitem.active").forEach(x => x.classList.remove("active"));
           b.classList.add("active");
@@ -88,7 +98,7 @@
           if (it.variables.length) document.querySelectorAll("#try-vars input").forEach(i => { i.checked = it.variables.includes(i.value); });
           $("try-status").textContent = `Box set to ${it.place} (${it.kind}). Variables picked for "${it.topic}". Press "Find the trends".`;
         });
-        box.append(b);
+        box.append(row);
       });
     } catch (err) {
       box.innerHTML = `<p class="sub">Headlines unavailable (needs the tool server and an internet connection).</p>`;
