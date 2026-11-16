@@ -252,3 +252,7 @@ ul.team li span { color: var(--muted); font-size: .9rem; }
 .pchips li.done em::before { content: "\2713 "; }
 .pchips li.failed { opacity: .7; text-decoration: line-through; }
 @media (prefers-reduced-motion: reduce) { .pbar span { transition: none; } .pbar.indeterminate span { animation: none; width: 100%; opacity: .5; } }
+
+/* "Try it out yourself" stands out in the tab bar even when another tab is open */
+.tabs button.tab-cta[aria-selected="false"] { color: var(--accent); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.tabs button.tab-cta[aria-selected="false"]:hover { background: var(--accent); color: var(--accent-ink); }
