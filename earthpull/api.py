@@ -224,7 +224,7 @@ def news_feed(days: int = 7, limit: int = 40):
     for r in df.head(limit).itertuples():
         fast = {x["id"] for x in variables() if x["fast"]}  # only pre-tick variables that answer quickly
         vs = [v for v in tps[r.topic]["variables"] if v in cat and not cat[v].get("event_only") and v in fast]
-        rows.append({"date": str(r.date), "title": r.title, "source": r.source, "link": r.link,
+        rows.append({"date": str(r.date), "time": r.time, "title": r.title, "source": r.source, "link": r.link,
                      "topic": tps[r.topic]["label"], "place": r.place, "kind": r.kind,
                      "box": [round(float(x), 2) for x in (r.west, r.south, r.east, r.north)], "variables": vs})
     out = clean(rows)

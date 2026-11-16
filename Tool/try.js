@@ -76,7 +76,8 @@
         const b = document.createElement("button");
         b.className = "newsitem";
         const meta = document.createElement("span"); meta.className = "nmeta";
-        meta.textContent = `${it.date} · ${it.topic} · ${it.place}`;
+        const day = it.time ? new Date(it.time).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : it.date;  // reader's own time zone
+        meta.textContent = `${day} · ${it.topic} · ${it.place}`;
         const title = document.createElement("span"); title.className = "ntitle";
         title.textContent = it.title + (it.source ? ` (${it.source})` : "");
         b.append(meta, title);

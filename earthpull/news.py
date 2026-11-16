@@ -58,10 +58,11 @@ def search_news(query: str, days: int = 30, lang: str = "en-US", country: str = 
         src = it.findtext("source") or ""
         if src and title.endswith(f" - {src}"):
             title = title[: -len(src) - 3]
-        rows.append({"date": parsedate_to_datetime(it.findtext("pubDate")).astimezone(timezone.utc).date(),
+        when = parsedate_to_datetime(it.findtext("pubDate")).astimezone(timezone.utc)
+        rows.append({"date": when.date(), "time": when.strftime("%Y-%m-%dT%H:%M:%SZ"),  # exact UTC time, shown in the reader's zone
                      "title": title, "source": src, "link": it.findtext("link")})
     return pd.DataFrame(rows).sort_values("date", ascending=False, ignore_index=True) if rows else \
-        pd.DataFrame(columns=["date", "title", "source", "link"])
+        pd.DataFrame(columns=["date", "time", "title", "source", "link"])
 
 
 def eonet_events(days: int = 30, category: str | None = None) -> pd.DataFrame:
@@ -404,14 +405,14 @@ def latest_environment_news(days: int = 7, per_topic: int = 60) -> pd.DataFrame:
             if pl.empty:
                 continue
             pl = pl.assign(k=pl.kind.map(KIND_RANK)).sort_values(["k", "mentions"]).iloc[0]
-            rows.append({"date": r.date, "topic": tid, "topic_label": tp["label"], "title": r.title,
+            rows.append({"date": r.date, "time": getattr(r, "time", None), "topic": tid, "topic_label": tp["label"], "title": r.title,
                          "source": r.source, "place": pl["name"], "kind": pl["kind"],
                          "west": pl.west, "south": pl.south, "east": pl.east, "north": pl.north, "link": r.link})
         time.sleep(0.5)  # be polite to the feed
     out = pd.DataFrame(rows)
     if out.empty:
         return out
-    out = out.drop_duplicates("title").sort_values("date", ascending=False, ignore_index=True)
+    out = out.drop_duplicates("title").sort_values(["date", "time"], ascending=False, ignore_index=True)
     # Keep the list varied: at most MAX_PER_PLACE stories per place and MAX_PER_TOPIC per topic (newest first),
     # then interleave topics so one busy topic (say, a week of floods) cannot fill the panel.
     out = out[out.groupby("place").cumcount() < MAX_PER_PLACE]
