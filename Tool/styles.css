@@ -78,7 +78,7 @@ select { font: inherit; font-size: .95rem; text-transform: none; letter-spacing:
 
 /* About */
 .about { display: grid; gap: 0; max-width: 960px; margin: 0 auto; padding: 48px 24px; }
-.toc { display: flex; gap: 32px; flex-wrap: wrap; margin-bottom: 32px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; font-size: .9rem; }
+.toc { margin-bottom: 44px; }
 .about .card { border-right: 0; padding: 48px 0; }
 .about li { margin-bottom: 10px; color: var(--soft); }
 .about li strong { color: var(--text); }
@@ -86,13 +86,23 @@ select { font: inherit; font-size: .95rem; text-transform: none; letter-spacing:
 
 /* About: plain-language intro + nav label */
 .about-intro { padding: 0 0 44px; margin-bottom: 8px; border-bottom: 1px solid var(--border); }
-.about-intro .lede { font-size: clamp(1.5rem, 3.2vw, 2.4rem); line-height: 1.12; letter-spacing: -0.025em; color: var(--text); max-width: 26ch; margin: 0 0 24px; }
+.about-intro .lede { font-size: clamp(2.4rem, 6vw, 4.5rem); font-weight: 600; line-height: 1.02; letter-spacing: -0.04em; color: var(--text); max-width: none; margin: 0 0 8px; }
 .about-intro p { color: var(--soft); max-width: 62ch; margin: 0 0 8px; font-size: 1.05rem; }
 .about-intro ul.intro-points { list-style: none; padding: 0; margin: 24px 0 0; display: grid; gap: 0; }
 .about-intro ul.intro-points li { border-top: 1px solid var(--border); padding: 18px 0; color: var(--soft); margin: 0; }
 .about-intro ul.intro-points li strong { color: var(--text); }
-.toc { align-items: baseline; }
-.toc-label { flex-basis: 100%; color: var(--muted); font-size: .7rem; letter-spacing: .14em; margin-bottom: -12px; }
+.toc-label { display: block; color: var(--text); font-size: 1.3rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; margin: 0 0 16px; }
+.toc-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0 36px; border-top: 1px solid var(--border); }
+.toc-list li { margin: 0; }
+.toc-list a { display: flex; align-items: baseline; gap: 14px; padding: 15px 2px; border-bottom: 1px solid var(--border); color: var(--text); font-weight: 600; font-size: 1.15rem; letter-spacing: -0.01em; transition: padding-left .2s ease, color .2s ease; }
+.toc-list a:hover { padding-left: 12px; color: var(--soft); }
+.toc-num { color: var(--muted); font-size: .72rem; font-weight: 600; letter-spacing: .1em; font-variant-numeric: tabular-nums; }
+.takeaway { font-size: 1.3rem; line-height: 1.4; color: var(--soft); max-width: 62ch; margin: 0 0 14px; padding-left: 16px; border-left: 2px solid var(--text); }
+.takeaway strong { color: var(--text); }
+.run-links { display: flex; flex-wrap: wrap; gap: 14px; margin: 20px 0 0; }
+.run-links a { display: inline-flex; align-items: center; gap: 9px; padding: 10px 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font-size: .95rem; font-weight: 600; transition: background .2s ease, border-color .2s ease; }
+.run-links a:hover { background: var(--surface-2); border-color: var(--muted); }
+.run-links svg { width: 18px; height: 18px; fill: currentColor; flex: none; }
 
 .site-footer { color: var(--muted); font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; padding: 48px 24px; border-top: 1px solid var(--border); }
 
@@ -213,7 +223,7 @@ td.hm { width: 64px; height: 40px; text-align: center; border: 1px solid var(--b
 @keyframes tabpop { 0% { transform: scale(.9); } 60% { transform: scale(1.04); } 100% { transform: scale(1); } }
 .car-arrow { transition: background .2s ease, transform .2s ease, opacity .2s ease; }
 .car-arrow:hover { transform: translateY(-50%) scale(1.12); }
-.sources li, .toc a { transition: color .2s ease, transform .2s ease; }
+.sources li { transition: color .2s ease, transform .2s ease; }
 .sources li:hover { transform: translateX(3px); }
 
 /* Ambient concentric-ellipse motif behind the intro */
@@ -233,13 +243,21 @@ td.hm { width: 64px; height: 40px; text-align: center; border: 1px solid var(--b
 }
 
 /* ---- About: boxed sub-tabs + team ---- */
-.toc a { border: 1px solid var(--border); border-radius: 8px; padding: 9px 15px; background: var(--surface); color: var(--text); transition: background .2s ease, border-color .2s ease, transform .2s ease; }
-.toc a:hover { background: var(--surface-2); border-color: var(--muted); transform: translateY(-1px); }
 ul.team { list-style: none; padding: 0; margin: 18px 0 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
-ul.team li { border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; display: flex; flex-direction: column; gap: 5px; background: var(--surface); }
+ul.team li { border: 1px solid var(--border); border-radius: 10px; padding: 22px 20px; display: flex; flex-direction: column; gap: 5px; background: var(--surface); }
 ul.team li strong { font-size: 1.1rem; letter-spacing: -0.01em; }
 ul.team li span { color: var(--muted); font-size: .9rem; }
-@media (prefers-reduced-motion: reduce) { .toc a:hover { transform: none; } }
+.team .avatar { position: relative; width: 84px; height: 84px; border-radius: 50%; overflow: hidden; background: var(--surface-2); border: 1px solid var(--border); display: grid; place-items: center; margin-bottom: 10px; }
+.team .avatar::before { content: attr(data-initials); color: var(--muted); font-size: 1.5rem; font-weight: 600; letter-spacing: .02em; }
+.team .avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.team .links { display: flex; gap: 16px; margin-top: 10px; }
+.team .links a { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: .85rem; letter-spacing: .02em; }
+.team .links a:hover { color: var(--text); transform: none; }
+.team .links svg { width: 16px; height: 16px; fill: currentColor; flex: none; }
+.intro-byline { color: var(--muted); font-size: .95rem; margin: 20px 0 0; }
+.intro-byline a { color: var(--soft); text-decoration: underline; text-underline-offset: 3px; }
+.intro-byline a:hover { color: var(--text); }
+@media (prefers-reduced-motion: reduce) { .toc-list a:hover { padding-left: 2px; } }
 
 /* Try it: headlines sit under the map as a two-column grid, variables in columns, so neither column runs long */
 .try-layout .news-panel { margin-top: 24px; border-top: 1px solid var(--border); padding-top: 16px; }

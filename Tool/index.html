@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Zenith &mdash; West Coast Climate Assessment</title>
+  <title>Zenith: West Coast Climate Assessment</title>
   <meta name="description" content="NASA Space Apps tool: measured trends in temperature, precipitation, smoke, water storage and soil moisture for Alaska, California, Hawaii, Oregon and Washington, with significance tests.">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -270,56 +270,62 @@
     <section id="panel-about" role="tabpanel" aria-labelledby="tab-about" hidden>
       <div class="about">
         <article class="about-intro">
-          <p class="lede">Zenith measures how a place's NASA Earth-science records are changing &mdash; and how sure we can be that the change is real, not just year-to-year noise.</p>
-          <p>This page is the full method behind the tool: from raw satellite data, to the trend tests, to the plain-language verdicts, with every result checked against published science. The essentials first:</p>
-          <ul class="intro-points">
-            <li><strong>What it does.</strong> Fits a trend to monthly NASA data for any region, tests whether that trend is significant, and finds which variables move together.</li>
-            <li><strong>How to read a verdict.</strong> &ldquo;Clear rise/fall&rdquo; means the change beats normal year-to-year swings at 95% confidence. &ldquo;No clear trend yet&rdquo; means it is still within the noise &mdash; not the same as no trend.</li>
-            <li><strong>How far to trust it.</strong> 24 of 25 checks against published studies matched. The limits are spelled out under <a href="#guardrails">Guardrails</a>.</li>
-          </ul>
+          <p class="lede">Zenith measures how a place's NASA Earth-science records are changing; and how sure we can be that the change is significant and real.</p>
         </article>
 
         <nav class="toc" aria-label="About sections">
           <span class="toc-label">On this page</span>
-          <a href="#methodology">Methodology</a>
-          <a href="#engine">Correlation engine</a>
-          <a href="#benchmarks">Benchmarks</a>
-          <a href="#guardrails">Guardrails</a>
-          <a href="#run">Run it</a>
-          <a href="#sources">Sources</a>
-          <a href="#team">Team CoderStellar</a>
+          <ol class="toc-list">
+            <li><a href="#motivation"><span class="toc-num">01</span><span class="toc-name">Motivation</span></a></li>
+            <li><a href="#methodology"><span class="toc-num">02</span><span class="toc-name">Methodology</span></a></li>
+            <li><a href="#engine"><span class="toc-num">03</span><span class="toc-name">Correlation engine</span></a></li>
+            <li><a href="#benchmarks"><span class="toc-num">04</span><span class="toc-name">Benchmarks</span></a></li>
+            <li><a href="#guardrails"><span class="toc-num">05</span><span class="toc-name">Guardrails</span></a></li>
+            <li><a href="#future"><span class="toc-num">06</span><span class="toc-name">Future scope</span></a></li>
+            <li><a href="#sources"><span class="toc-num">07</span><span class="toc-name">Sources</span></a></li>
+            <li><a href="#run"><span class="toc-num">08</span><span class="toc-name">Run it</span></a></li>
+            <li><a href="#team"><span class="toc-num">09</span><span class="toc-name">Team CoderStellar</span></a></li>
+          </ol>
         </nav>
+
+        <article id="motivation" class="card">
+          <h2>Motivation</h2>
+          <p>Almost everyone has heard that the planet is changing, but almost no one can check what is happening where they actually live. The honest, qualified answers are locked inside research papers and data portals that assume you already know what a time series or a p-value is; the answers that do reach the public arrive as headlines with all of their uncertainty stripped out. We kept running into that gap ourselves, and wanted to close it: to let anyone ask a plain question about a real place and get back an answer that is both understandable and statistically honest.</p>
+          <p>Working with isolated variables and disconnected datasets is genuinely hard, and that difficulty is the whole point of this challenge. The same underlying process can push a variable up in one region and down in another; the patterns you're looking for are often hidden by seasonal changes and natural year-to-year fluctuations; and there are hundreds of candidate variables to sort through before any analysis even begins. A tool that hid all of that and simply printed a confident arrow would be lying. That's why we built Zenith: to pick sensible NASA variables for a region, account for seasonal patterns, analyze long-term trends, and then actually test whether that trend is strong enough to believe, and say so plainly when it is not. Built using real mathematical models.</p>
+          <p>What we kept coming back to is the idea of turning people into data detectives rather than passive readers of someone else's conclusion. &ldquo;No clear trend yet&rdquo; is an honest result, and sometimes all a trend needs to cross the line into significance is a few more years of data. Zenith is our attempt to make that kind of careful, evidence-first reasoning about a changing planet something a student, a teacher, or a curious neighbour can do in a few clicks, without having to take our word, or anyone's, on faith.</p>
+        </article>
 
         <article id="methodology" class="card">
           <h2>Methodology</h2>
           <ol>
-            <li><strong>Regions.</strong> US Census 2024 state outlines. Each grid cell is weighted by its share inside the state and by cos(latitude), like NASA Giovanni's shape masks. Alaska's outline is cut at 180&deg;, dropping the far-western Aleutians.</li>
-            <li><strong>Data.</strong> Monthly NASA products, via NASA Earthdata (Harmony subsetting and Giovanni's averaging service): air temperature (MERRA-2 M2TMNXSLV, 1980&ndash;2024), precipitation (GPM IMERG V07, 2001&ndash;2024), aerosol optical depth (MODIS Aqua MYD08_M3, summers 2003&ndash;2024), total water storage (GRACE/GRACE-FO JPL mascons, 2003&ndash;2024) and soil moisture (GLDAS Noah 2.1, 2003&ndash;2024).</li>
-            <li><strong>Trend.</strong> A straight line fitted together with the seasonal cycle on the real monthly calendar, so gaps stay gaps (such as GRACE's 2017&ndash;18 gap). For smoke, the trend of each summer's June&ndash;August average.</li>
-            <li><strong>Significance.</strong> Neighbouring months are not independent, so the test uses an effective number of months from the lag-1 autocorrelation &mdash; the correction IPCC AR6 uses (Santer et al. 2008). The 95% range and p-value come from that test.</li>
-            <li><strong>Verdict.</strong> &ldquo;Clear rise/fall&rdquo; needs p &lt; 0.05 <em>and</em> a robust Theil&ndash;Sen slope (same correction) pointing the same way. Otherwise &ldquo;no clear trend yet&rdquo;: the change so far sits within normal year-to-year swings, so it may still be noise &mdash; which is not &ldquo;no trend&rdquo;. A longer record may settle it.</li>
-            <li><strong>Explanations.</strong> The &ldquo;What this means&rdquo; text is written by an AI model from a fact sheet of the computed numbers. A checker rejects any number not in the results, any causal claim (&ldquo;caused by&rdquo;, &ldquo;proves&rdquo;) and filler; if a reply fails twice, a plain template sentence is shown instead.</li>
-            <li><strong>Units.</strong> Temperature in &deg;C per decade; precipitation and soil moisture as % of the state's average per decade; smoke in aerosol optical depth per decade; water storage in mm/year (and km&sup3;/yr for the whole state).</li>
-            <li><strong>Pipeline.</strong> <code>scripts/build_tool_data.py</code> (in the earthpull project) downloads, clips, averages and tests everything, then writes <code>data.js</code>. The site itself is static and does no processing.</li>
+            <li><strong>Regions:</strong> US Census 2024 state boundaries. Each grid cell is weighted by the fraction of its area within the state and by cos(latitude) to account for differences in grid-cell area. Alaska's boundary is clipped at 180&deg;, excluding the far-western Aleutians.</li>
+            <li><strong>Data:</strong> Monthly NASA products, via NASA Earthdata (Harmony subsetting and Giovanni's averaging service): air temperature (MERRA-2 M2TMNXSLV, 1980&ndash;2024), precipitation (GPM IMERG V07, 2001&ndash;2024), aerosol optical depth (MODIS Aqua MYD08_M3, summers 2003&ndash;2024), total water storage (GRACE/GRACE-FO JPL mascons, 2003&ndash;2024) and soil moisture (GLDAS Noah 2.1, 2003&ndash;2024).</li>
+            <li><strong>Trend:</strong> A straight line fitted together with the seasonal cycle on the real monthly calendar, so gaps stay gaps (such as GRACE's 2017&ndash;18 gap). For smoke, the trend of each summer's June&ndash;August average.</li>
+            <li><strong>Significance:</strong> Neighbouring months are not independent, so the test uses an effective number of months from the lag-1 autocorrelation, the correction IPCC AR6 uses (Santer et al. 2008). The 95% range and p-value come from that test.</li>
+            <li><strong>Verdict:</strong> &ldquo;Clear rise/fall&rdquo; needs p &lt; 0.05 <em>and</em> a robust Theil&ndash;Sen slope (same correction) pointing the same way. Otherwise &ldquo;no clear trend yet&rdquo;: the change so far sits within normal year-to-year swings, so it may still be noise, which is not &ldquo;no trend&rdquo;. A longer record may settle it.</li>
+            <li><strong>Explanations:</strong> The &ldquo;What this means&rdquo; text is written by an AI model from a fact sheet of the computed numbers. A checker rejects any number not in the results, any causal claim (&ldquo;caused by&rdquo;, &ldquo;proves&rdquo;) and filler; if a reply fails twice, a plain template sentence is shown instead.</li>
+            <li><strong>Units:</strong> Temperature in &deg;C per decade; precipitation and soil moisture as % of the state's average per decade; smoke in aerosol optical depth per decade; water storage in mm/year (and km&sup3;/yr for the whole state).</li>
+            <li><strong>Pipeline:</strong> <code>scripts/build_tool_data.py</code> (in the earthpull project) downloads, clips, averages and tests everything, then writes <code>data.js</code>. The site itself is static and does no processing.</li>
           </ol>
         </article>
 
         <article id="engine" class="card">
           <h2>Correlation engine</h2>
-          <p class="sub">"What moves together here?" in the Try tab. No AI: fixed statistics and a fixed physics table. The strongest wording it uses is "consistent with A influencing B", never "causes".</p>
+          <p class="sub">Available in the Try tab, the correlation engine explores which environmental variables move together across a selected region. No AI: fixed statistics and a fixed physics table. Identifies relationships and potential physical connections without claiming causation.</p>
           <ol>
-            <li><strong>Clean-up.</strong> Each calendar month's normal value is removed (seasons), then each variable's trend is removed with the same fit as the trend test &mdash; so two variables that merely both drift are not called linked.</li>
+            <li><strong>Clean-up:</strong> Each calendar month's normal value is removed (seasons), then each variable's trend is removed with the same fit as the trend test, so two variables that merely both drift are not called linked.</li>
             <li><strong>Move together?</strong> Lagged correlation (0&ndash;3 months, either direction), with an effective sample size from each series' lag-1 autocorrelation (Bretherton et al. 1999), a Benjamini&ndash;Hochberg false-discovery correction across all pairs and delays, and a surrogate test (phase-randomised series that keep each variable's own rhythm).</li>
             <li><strong>Not explained by the rest?</strong> Partial correlation, controlling for every other variable chosen.</li>
-            <li><strong>Timing.</strong> A Granger causality test in both directions (does A's past help predict B?), used only to flag one-way timing.</li>
-            <li><strong>Physics.</strong> A fixed table of 26 known mechanisms (e.g. rain &rarr; soil moisture, warmer air &rarr; drier soil, snowfall &rarr; snow depth). Only listed pairs, with the expected sign and delay, reach the top verdict. "Same" pairs (two measures of one thing) should agree; "shared" pairs (a common source) are never called a cause.</li>
+            <li><strong>Timing:</strong> A Granger causality test in both directions (does A's past help predict B?), used only to flag one-way timing.</li>
+            <li><strong>Physics:</strong> A fixed table of 26 known mechanisms (e.g. rain &rarr; soil moisture, warmer air &rarr; drier soil, snowfall &rarr; snow depth). Only listed pairs, with the expected sign and delay, reach the top verdict. "Same" pairs (two measures of one thing) should agree; "shared" pairs (a common source) are never called a cause.</li>
             <li><strong>Is a trend explained by another variable?</strong> The variable is refitted with the other one added (same memory-adjusted errors). If the other has no significant effect of its own, or is itself just a steady trend with no known mechanism, the engine reports that the two "cannot be separated".</li>
           </ol>
         </article>
 
         <article id="benchmarks" class="card">
           <h2>Benchmarks</h2>
-          <p class="sub">The engine was run on the same variables, regions and periods as published studies. </p>
+          <p class="takeaway"><strong>24 of 25 checks against published studies matched.</strong></p>
+          <p class="sub">The engine was run on the same variables, regions and periods as published studies, then compared row by row. </p>
           <div class="detail scroll"><table>
             <tr><th>Study</th><th>Quantity</th><th>Published</th><th>This engine</th><th></th></tr>
             <tr><td>Rodell et al. 2009, Nature</td><td>NW India groundwater, 2002&ndash;08</td><td>&minus;17.7 &plusmn; 4.5 km&sup3;/yr</td><td>&minus;11.3 (&minus;15.0 with margin)</td><td>pass</td></tr>
@@ -354,16 +360,44 @@
         <article id="guardrails" class="card">
           <h2>Guardrails</h2>
           <ul>
-            <li><strong>Trends, not causes.</strong> The tool reports what changed and how sure the statistics are. It does not say why.</li>
-            <li><strong>Not a forecast.</strong> Past trends do not predict the future, and nothing here is emergency, insurance, planning or legal advice.</li>
-            <li><strong>Resolution limits.</strong> State averages hide large local differences. GRACE's footprint is about 300 km, so Hawaii's water-storage trend is not reliable, and state totals leak across borders (shown as a range).</li>
-            <li><strong>Relative charts.</strong> The change profile ranks these five states against each other only.</li>
-            <li><strong>Tested against published studies.</strong> All 25 checks against published studies were run; 24 matched the published result (96%), and the one miss is explained by the dataset. The dataset limitations they revealed are listed below.</li>
-            <li><strong>Attribution.</strong> Built with NASA open data. Not affiliated with or endorsed by NASA.</li>
-            <li><strong>Privacy and accessibility.</strong> No accounts, tracking or personal data. Keyboard-navigable tabs, labelled controls, and text versions (ranking list, detail table, profile list) of every chart.</li>
+            <li><strong>Trends, not causes:</strong> The tool reports what changed and how sure the statistics are. It does not say why.</li>
+            <li><strong>Not a forecast:</strong> Past trends do not predict the future, and nothing here is emergency, insurance, planning or legal advice.</li>
+            <li><strong>Resolution limits:</strong> State averages hide large local differences. GRACE's footprint is about 300 km, so Hawaii's water-storage trend is not reliable, and state totals leak across borders (shown as a range).</li>
+            <li><strong>Relative charts:</strong> The change profile ranks these five states against each other only.</li>
+            <li><strong>Tested against published studies:</strong> All 25 checks against published studies were run; 24 matched the published result (96%), and the one miss is explained by the dataset. The dataset limitations they revealed are listed below.</li>
+            <li><strong>Attribution:</strong> Built with NASA open data. Not affiliated with or endorsed by NASA.</li>
+            <li><strong>Privacy and accessibility:</strong> No accounts, tracking or personal data. Keyboard-navigable tabs, labelled controls, and text versions (ranking list, detail table, profile list) of every chart.</li>
           </ul>
           <h3>Dataset caveats from our benchmark tests</h3>
           <ul id="caveats"></ul>
+        </article>
+
+        <article id="future" class="card">
+          <h2>Future scope</h2>
+          <p>Zenith's honest limits double as its roadmap. The engine already runs for any point on Earth in &ldquo;Try it out yourself&rdquo;; the work ahead is to bring that same depth to the main site and let people go well past five demo states.</p>
+          <ul>
+            <li><strong>Finer regions:</strong> let people draw their own area, or pick a city or county, instead of whole-state averages that hide local change.</li>
+            <li><strong>Global coverage:</strong> extend the prepared demo data worldwide, so anywhere a person cares about answers quickly, not just the Pacific states.</li>
+            <li><strong>More variables and non-linear trends:</strong> add ocean, atmosphere and vegetation variables, and detect changepoints and curved trends, not only straight lines.</li>
+            <li><strong>From correlation toward attribution:</strong> move carefully beyond &ldquo;what moves together&rdquo; toward tested statements about cause, with the physics table carrying more of the weight.</li>
+            <li><strong>Watchlists:</strong> let people follow a place and a variable, and hear about it when a &ldquo;no clear trend yet&rdquo; crosses into significance as new data arrives.</li>
+          </ul>
+        </article>
+
+        <article id="sources" class="card">
+          <h2>Sources</h2>
+          <ul class="sources">
+            <li><a href="https://disc.gsfc.nasa.gov/datasets/M2TMNXSLV_5.12.4/summary" target="_blank" rel="noopener">MERRA-2 M2TMNXSLV v5.12.4</a> (NASA GMAO / GES DISC): 2 m air temperature</li>
+            <li><a href="https://disc.gsfc.nasa.gov/datasets/GPM_3IMERGM_07/summary" target="_blank" rel="noopener">GPM IMERG Final monthly V07 (GPM_3IMERGM)</a> (NASA GES DISC): precipitation</li>
+            <li><a href="https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/MYD08_M3" target="_blank" rel="noopener">MODIS Aqua MYD08_M3 v6.1</a> (NASA LAADS): aerosol optical depth, 550 nm</li>
+            <li><a href="https://podaac.jpl.nasa.gov/dataset/TELLUS_GRAC-GRFO_MASCON_CRI_GRID_RL06.3_V4" target="_blank" rel="noopener">GRACE/GRACE-FO JPL mascons RL06.3 v04 (CRI)</a> (NASA PO.DAAC): total water storage</li>
+            <li><a href="https://disc.gsfc.nasa.gov/datasets/GLDAS_NOAH025_M_2.1/summary" target="_blank" rel="noopener">GLDAS Noah 2.1 monthly</a> (NASA GES DISC): soil moisture, evaporation, snow</li>
+            <li>Also in "Try it out yourself": AIRS AIRS3STM 7.0 (surface air temperature), OMI OMNO2d 003 (NO&#8322;), MERRA-2 M2TMNXAER (aerosol), MODIS MOD13C2 / MOD11C3 (greenness, land temperature)</li>
+            <li><a href="https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html" target="_blank" rel="noopener">US Census Bureau cartographic boundaries 2024</a>: state outlines used for the statistics</li>
+            <li><a href="https://github.com/PublicaMundi/MappingAPI/blob/master/data/geojson/us-states.json" target="_blank" rel="noopener">US states GeoJSON</a>: map drawing</li>
+            <li><a href="https://leafletjs.com/" target="_blank" rel="noopener">Leaflet</a>, <a href="https://www.chartjs.org/" target="_blank" rel="noopener">Chart.js</a>, <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>: software and basemap</li>
+          </ul>
+          <p class="sub">Methods references: Santer et al. 2008 (effective sample size); Sen 1968 (Theil&ndash;Sen slope); Bretherton et al. 1999 (correlation significance); Benjamini &amp; Hochberg 1995 and Wilks 2016 (multiple testing); Granger 1969; Weatherhead et al. 1998 (years needed to detect a trend); IPCC AR6 WG1 Ch. 2. Software: Python (numpy, pandas, xarray, scipy, statsmodels, pymannkendall, regionmask, geopandas, earthaccess, harmony-py, FastAPI), Leaflet, Chart.js.</p>
         </article>
 
         <article id="run" class="card">
@@ -371,32 +405,52 @@
           <p>The Homepage and Map tabs work as a static site. "Try it out yourself" needs the tool server, which fetches NASA data on demand (a free NASA Earthdata login is required on the server):</p>
           <p><code>.venv/bin/uvicorn earthpull.api:app --port 8000</code> then open <code>http://localhost:8000</code></p>
           <p class="sub">Variables with a global file on the server (air temperature, aerosol, MODIS AOD, GRACE) answer in seconds anywhere on Earth; others take from seconds (Giovanni averaging) to a few minutes the first time, then are cached.</p>
-        </article>
-
-        <article id="sources" class="card">
-          <h2>Sources</h2>
-          <ul class="sources">
-            <li><a href="https://disc.gsfc.nasa.gov/datasets/M2TMNXSLV_5.12.4/summary" target="_blank" rel="noopener">MERRA-2 M2TMNXSLV v5.12.4</a> (NASA GMAO / GES DISC) &mdash; 2 m air temperature</li>
-            <li><a href="https://disc.gsfc.nasa.gov/datasets/GPM_3IMERGM_07/summary" target="_blank" rel="noopener">GPM IMERG Final monthly V07 (GPM_3IMERGM)</a> (NASA GES DISC) &mdash; precipitation</li>
-            <li><a href="https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/MYD08_M3" target="_blank" rel="noopener">MODIS Aqua MYD08_M3 v6.1</a> (NASA LAADS) &mdash; aerosol optical depth, 550 nm</li>
-            <li><a href="https://podaac.jpl.nasa.gov/dataset/TELLUS_GRAC-GRFO_MASCON_CRI_GRID_RL06.3_V4" target="_blank" rel="noopener">GRACE/GRACE-FO JPL mascons RL06.3 v04 (CRI)</a> (NASA PO.DAAC) &mdash; total water storage</li>
-            <li><a href="https://disc.gsfc.nasa.gov/datasets/GLDAS_NOAH025_M_2.1/summary" target="_blank" rel="noopener">GLDAS Noah 2.1 monthly</a> (NASA GES DISC) &mdash; soil moisture, evaporation, snow</li>
-            <li>Also in "Try it out yourself": AIRS AIRS3STM 7.0 (surface air temperature), OMI OMNO2d 003 (NO&#8322;), MERRA-2 M2TMNXAER (aerosol), MODIS MOD13C2 / MOD11C3 (greenness, land temperature)</li>
-            <li><a href="https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html" target="_blank" rel="noopener">US Census Bureau cartographic boundaries 2024</a> &mdash; state outlines used for the statistics</li>
-            <li><a href="https://github.com/PublicaMundi/MappingAPI/blob/master/data/geojson/us-states.json" target="_blank" rel="noopener">US states GeoJSON</a> &mdash; map drawing</li>
-            <li><a href="https://leafletjs.com/" target="_blank" rel="noopener">Leaflet</a>, <a href="https://www.chartjs.org/" target="_blank" rel="noopener">Chart.js</a>, <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a> &mdash; software and basemap</li>
-          </ul>
-          <p class="sub">Methods references: Santer et al. 2008 (effective sample size); Sen 1968 (Theil&ndash;Sen slope); Bretherton et al. 1999 (correlation significance); Benjamini &amp; Hochberg 1995 and Wilks 2016 (multiple testing); Granger 1969; Weatherhead et al. 1998 (years needed to detect a trend); IPCC AR6 WG1 Ch. 2. Software: Python (numpy, pandas, xarray, scipy, statsmodels, pymannkendall, regionmask, geopandas, earthaccess, harmony-py, FastAPI), Leaflet, Chart.js.</p>
+          <p class="run-links">
+            <a href="https://github.com/CoderStellar/Zenith" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5A11.5 11.5 0 0 0 .5 12a11.5 11.5 0 0 0 7.86 10.92c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.56-.29-5.26-1.28-5.26-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.8 0c2.2-1.5 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.43-2.7 5.4-5.28 5.69.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 23.5 12 11.5 11.5 0 0 0 12 .5z"/></svg><span>GitHub repository</span></a>
+            <a href="https://turtlerecall.us/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm6.93 6h-2.95a15.6 15.6 0 0 0-1.38-3.56A8.03 8.03 0 0 1 18.93 8zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14a7.96 7.96 0 0 1 0-4h3.38a16.6 16.6 0 0 0 0 4H4.26zm.81 2h2.95c.32 1.25.78 2.45 1.38 3.56A8.03 8.03 0 0 1 5.07 16zm2.95-8H5.07a8.03 8.03 0 0 1 4.33-3.56A15.6 15.6 0 0 0 8.02 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82A15.6 15.6 0 0 1 12 19.96zM14.34 14H9.66a14.8 14.8 0 0 1 0-4h4.68a14.8 14.8 0 0 1 0 4zm.24 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95a8.03 8.03 0 0 1-4.33 3.56zM16.36 14a16.6 16.6 0 0 0 0-4h3.38a7.96 7.96 0 0 1 0 4h-3.38z"/></svg><span>Live site</span></a>
+          </p>
         </article>
 
         <article id="team" class="card">
           <h2>Team CoderStellar</h2>
-          <p>CoderStellar is a group of graduate students and recent graduates &mdash; tech and space enthusiasts who love solving problems and building tools.</p>
+          <p>CoderStellar is a group of graduate students and recent graduates, tech and space enthusiasts who love solving problems and building tools.</p>
           <ul class="team">
-            <li><strong>Aarushi Singh</strong><span>M.S. Information Management</span></li>
-            <li><strong>Anushka Singh</strong><span>M.S. Computer Science</span></li>
-            <li><strong>Uday Kasturi</strong><span>M.Eng. Cybersecurity</span></li>
-            <li><strong>Darshan V.L.</strong><span>M.Eng. Software Engineering</span></li>
+            <li>
+              <span class="avatar" data-initials="AS"><img src="img/team/aarushi.jpg" alt="Aarushi Singh" loading="lazy" onerror="this.remove()"></span>
+              <strong>Aarushi Singh</strong>
+              <span>M.S. Information Management</span>
+              <span class="links">
+                <a href="https://www.linkedin.com/in/aarushi-singh56/" target="_blank" rel="noopener" aria-label="Aarushi Singh on LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.47-.9 1.63-1.85 3.36-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29zM5.34 7.43a2.07 2.07 0 1 1 0-4.14 2.07 2.07 0 0 1 0 4.14zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.22.79 24 1.77 24h20.45c.98 0 1.78-.78 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg><span>LinkedIn</span></a>
+                <a href="mailto:aarushisingh.us@gmail.com" aria-label="Email Aarushi Singh"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 4H2a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h20a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1zm-1.4 2L12 11.75 3.4 6h17.2zM3 18V7.24l8.47 5.66a1 1 0 0 0 1.06 0L21 7.24V18H3z"/></svg><span>Email</span></a>
+              </span>
+            </li>
+            <li>
+              <span class="avatar" data-initials="AS"><img src="img/team/anushka.jpg" alt="Anushka Singh" loading="lazy" onerror="this.remove()"></span>
+              <strong>Anushka Singh</strong>
+              <span>M.S. Computer Science</span>
+              <span class="links">
+                <a href="https://www.linkedin.com/in/anushka-usingh/" target="_blank" rel="noopener" aria-label="Anushka Singh on LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.47-.9 1.63-1.85 3.36-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29zM5.34 7.43a2.07 2.07 0 1 1 0-4.14 2.07 2.07 0 0 1 0 4.14zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.22.79 24 1.77 24h20.45c.98 0 1.78-.78 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg><span>LinkedIn</span></a>
+                <a href="mailto:singh.anu6081@gmail.com" aria-label="Email Anushka Singh"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 4H2a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h20a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1zm-1.4 2L12 11.75 3.4 6h17.2zM3 18V7.24l8.47 5.66a1 1 0 0 0 1.06 0L21 7.24V18H3z"/></svg><span>Email</span></a>
+              </span>
+            </li>
+            <li>
+              <span class="avatar" data-initials="UK"><img src="img/team/uday.jpg" alt="Uday Kasturi" loading="lazy" onerror="this.remove()"></span>
+              <strong>Uday Kasturi</strong>
+              <span>M.Eng. Cybersecurity</span>
+              <span class="links">
+                <a href="https://www.linkedin.com/in/uday-aditya-kasturi/" target="_blank" rel="noopener" aria-label="Uday Kasturi on LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.47-.9 1.63-1.85 3.36-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29zM5.34 7.43a2.07 2.07 0 1 1 0-4.14 2.07 2.07 0 0 1 0 4.14zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.22.79 24 1.77 24h20.45c.98 0 1.78-.78 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg><span>LinkedIn</span></a>
+                <a href="mailto:udayk@umd.edu" aria-label="Email Uday Kasturi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 4H2a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h20a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1zm-1.4 2L12 11.75 3.4 6h17.2zM3 18V7.24l8.47 5.66a1 1 0 0 0 1.06 0L21 7.24V18H3z"/></svg><span>Email</span></a>
+              </span>
+            </li>
+            <li>
+              <span class="avatar" data-initials="DV"><img src="img/team/darshan.jpg" alt="Darshan V.L." loading="lazy" onerror="this.remove()"></span>
+              <strong>Darshan V.L.</strong>
+              <span>M.Eng. Software Engineering</span>
+              <span class="links">
+                <a href="https://www.linkedin.com/in/darshan-ram-v-l-3b95b867/" target="_blank" rel="noopener" aria-label="Darshan V.L. on LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.47-.9 1.63-1.85 3.36-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29zM5.34 7.43a2.07 2.07 0 1 1 0-4.14 2.07 2.07 0 0 1 0 4.14zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.22.79 24 1.77 24h20.45c.98 0 1.78-.78 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg><span>LinkedIn</span></a>
+                <a href="mailto:darshanr@umd.edu" aria-label="Email Darshan V.L."><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 4H2a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h20a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1zm-1.4 2L12 11.75 3.4 6h17.2zM3 18V7.24l8.47 5.66a1 1 0 0 0 1.06 0L21 7.24V18H3z"/></svg><span>Email</span></a>
+              </span>
+            </li>
           </ul>
         </article>
       </div>
