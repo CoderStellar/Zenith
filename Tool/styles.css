@@ -229,3 +229,11 @@ ul.team li { border: 1px solid var(--border); border-radius: 10px; padding: 18px
 ul.team li strong { font-size: 1.1rem; letter-spacing: -0.01em; }
 ul.team li span { color: var(--muted); font-size: .9rem; }
 @media (prefers-reduced-motion: reduce) { .toc a:hover { transform: none; } }
+
+/* Try it: headlines sit under the map as a two-column grid, variables in columns, so neither column runs long */
+.try-layout .news-panel { margin-top: 24px; border-top: 1px solid var(--border); padding-top: 16px; }
+.try-layout .news-panel h3 { margin: 0 0 4px; }
+.try-layout .newslist { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0 20px;
+  max-height: 460px; border-top: 0; margin-top: 8px; }
+.try-layout .newsitem { border-bottom: 1px solid var(--border); }
+.checks.vars { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 4px 16px; }

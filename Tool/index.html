@@ -142,7 +142,7 @@
 
     <!-- TAB: TRY IT OUT YOURSELF -->
     <section id="panel-try" role="tabpanel" aria-labelledby="tab-try" hidden>
-      <div class="map-layout">
+      <div class="map-layout try-layout">
         <aside class="side">
           <h2>Try it anywhere</h2>
           <p class="sub">Pick any box on Earth and a NASA variable. The same engine that made the Pacific-states numbers fetches the data and tests the trend.</p>
@@ -152,13 +152,10 @@
             <label class="block">South<input id="try-s" type="number" step="0.1"></label>
             <label class="block">North<input id="try-n" type="number" step="0.1"></label>
           </div>
-          <label class="block">Places in the news</label>
-          <p class="sub">Environment headlines from the last 7 days, each tied to the place it names. Click one to set the box and the variables for its topic.</p>
-          <div id="try-news" class="newslist" aria-live="polite"><p class="sub">Loading headlines…</p></div>
           <button id="try-draw" class="ghost">Draw a box</button>
           <p class="sub">Or hold Shift and drag on the map, or type the coordinates.</p>
           <label class="block">Variables (pick one or more)</label>
-          <div id="try-vars" class="checks one"></div>
+          <div id="try-vars" class="checks vars"></div>
           <div class="boxin">
             <label class="block">From<input id="try-y0" type="number" value="2003" min="1980" max="2026"></label>
             <label class="block">To<input id="try-y1" type="number" value="2024" min="1980" max="2026"></label>
@@ -170,6 +167,11 @@
         <div class="map-wrap">
           <div id="try-map" class="trymap" aria-label="World map for choosing a region"></div>
           <p class="sub map-note">Dashed box: your region (from a preset, a headline, or the coordinates). After a run, coloured cells show the trend in each grid cell (for variables with a global file on the server).</p>
+          <div class="news-panel">
+            <h3>Places in the news</h3>
+            <p class="sub">Environment headlines from the last 7 days, each tied to the place it names. Click one to set the box and the variables for its topic.</p>
+            <div id="try-news" class="newslist" aria-live="polite"><p class="sub">Loading headlines…</p></div>
+          </div>
         </div>
       </div>
 
