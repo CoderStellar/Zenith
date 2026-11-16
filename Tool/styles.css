@@ -350,3 +350,6 @@ ul.team li span { color: var(--muted); font-size: .9rem; }
 .newsrow .nread:hover, .newsrow .nread:focus-visible { color: var(--text); border-bottom-color: var(--text); }
 .newsrow:has(.newsitem.active) { background: var(--text); }
 .newsrow:has(.newsitem.active) .nread { color: var(--bg); opacity: .75; }
+
+/* Landing headline runs the full width of the screen */
+.intro h2.hero-q { max-width: none; font-size: clamp(2.2rem, 5.6vw, 7rem); line-height: .98; letter-spacing: -0.045em; }
