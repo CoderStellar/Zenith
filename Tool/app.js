@@ -23,6 +23,13 @@
     });
   });
 
+  // the logo and site name in the top left go back to Home
+  document.getElementById("brand-home").addEventListener("click", e => {
+    e.preventDefault();
+    show("home");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
   const h0 = location.hash.replace("#", "");
   if (!window.STATS || !window.META) {  // data.js missing or still the old placeholder file
     document.getElementById("panel-home").insertAdjacentHTML("afterbegin",
