@@ -508,8 +508,8 @@
       cells.push(`<h3>Flags when places disagree</h3><div>${bars}</div>
         <p class="r-note">Warmer means drier soil${flipped.length ? `, except ${flipped.join(" and ")}` : ""}.</p>`);
     }
-    cells.push(`<h3>Checked against published science</h3><p class="r-big">13 of 16 match</p>
-      <p class="r-note">The 3 misses are shown, with reasons.</p>
+    cells.push(`<h3>Checked against published science</h3><p class="r-big">24 of 25 match</p>
+      <p class="r-note">The misses are shown, with reasons.</p>
       <button class="r-link" type="button" data-go="about">See the benchmarks</button>`);
     cells.push(`<h3>Summaries can\u2019t invent numbers</h3><p class="r-big">Every number checked</p>
       <p class="r-note">Against the computed results, before you see it.</p>`);
