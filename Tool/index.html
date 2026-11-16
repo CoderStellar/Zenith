@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=14">
+  <link rel="stylesheet" href="styles.css?v=11">
 </head>
 <body>
   <header class="site-header">
@@ -162,6 +162,7 @@
           </div>
           <button id="try-run" class="primary">Find the trends</button>
           <p id="try-status" class="sub" aria-live="polite">Connecting to the tool server…</p>
+          <div id="try-progress" class="progress-box" hidden></div>
           <div id="try-map-legend" class="legend"></div>
         </aside>
         <div class="map-wrap">
@@ -179,6 +180,7 @@
         <div class="hero slim">
           <h2>What is changing here</h2>
           <p class="sub">One row per variable. Then pick one below for its full charts and map.</p>
+          <div id="try-progress-top" class="progress-box" hidden></div>
         </div>
         <div class="kpis" id="try-summary"></div>
         <div class="card detailbar">
@@ -218,6 +220,7 @@
             <div id="try-corr-vars" class="checks"></div>
             <button id="try-corr-run" class="primary">Run the correlation engine</button>
             <p id="try-corr-status" class="sub" aria-live="polite"></p>
+            <div id="try-corr-progress" class="progress-box" hidden><div class="pbar indeterminate"><span></span></div></div>
           </article>
         </div>
         <div id="try-corr-out" hidden>
@@ -411,7 +414,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="data.js?v=9"></script>
   <script src="grids.js?v=6"></script>
-  <script src="try.js?v=9"></script>
+  <script src="try.js?v=11"></script>
   <script src="app.js?v=13"></script>
 </body>
 </html>

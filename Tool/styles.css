@@ -237,3 +237,18 @@ ul.team li span { color: var(--muted); font-size: .9rem; }
   max-height: 460px; border-top: 0; margin-top: 8px; }
 .try-layout .newsitem { border-bottom: 1px solid var(--border); }
 .checks.vars { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 4px 16px; }
+
+/* Try it: progress for trend runs and the correlation engine */
+.progress-box { margin: 12px 0 16px; }
+.pbar { height: 8px; background: var(--surface-2, rgba(255,255,255,.08)); border: 1px solid var(--border); overflow: hidden; }
+.pbar span { display: block; height: 100%; background: var(--text); transition: width .4s ease; }
+.pbar.indeterminate span { width: 30%; animation: pslide 1.4s ease-in-out infinite; }
+@keyframes pslide { 0% { margin-left: -30%; } 100% { margin-left: 100%; } }
+.pchips { list-style: none; padding: 0; margin: 8px 0 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.pchips li { font-size: .8rem; padding: 4px 8px; border: 1px solid var(--border); display: flex; gap: 6px; align-items: baseline; }
+.pchips li em { font-style: normal; font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.pchips li.loading { border-color: var(--text); }
+.pchips li.loading em { color: var(--text); }
+.pchips li.done em::before { content: "\2713 "; }
+.pchips li.failed { opacity: .7; text-decoration: line-through; }
+@media (prefers-reduced-motion: reduce) { .pbar span { transition: none; } .pbar.indeterminate span { animation: none; width: 100%; opacity: .5; } }

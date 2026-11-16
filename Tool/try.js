@@ -100,6 +100,25 @@
     return `w=${w}&s=${s}&e=${e}&n=${n}&start=${$("try-y0").value}&end=${$("try-y1").value}`;
   }
 
+  // Progress for a trend run: one bar plus one chip per variable (waiting / loading / done / failed).
+  let RUNNING = false;
+  function showProgress(ids, state) {
+    const done = ids.filter(v => state[v] === "done" || state[v] === "failed").length;
+    const label = { waiting: "waiting", loading: "loading…", done: "done", failed: "failed" };
+    const html = `<div class="pbar" role="progressbar" aria-valuemin="0" aria-valuemax="${ids.length}" aria-valuenow="${done}">` +
+      `<span style="width:${Math.round(100 * done / ids.length)}%"></span></div>` +
+      `<p class="sub">${done} of ${ids.length} variables ready${done < ids.length ? ". Results appear below as each one finishes." : "."}</p>` +
+      `<ul class="pchips">${ids.map(v => `<li class="${state[v]}">${VARS.find(x => x.id === v).name}<em>${label[state[v]]}</em></li>`).join("")}</ul>`;
+    for (const id of ["try-progress", "try-progress-top"]) { $(id).innerHTML = html; $(id).hidden = false; }
+  }
+  function corrGate() {
+    const btn = $("try-corr-run");
+    if (!btn) return;
+    btn.disabled = RUNNING;
+    if (RUNNING) $("try-corr-status").textContent = "Waiting for the trend run above to finish, so the engine uses the same data…";
+    else if ($("try-corr-status").textContent.startsWith("Waiting")) $("try-corr-status").textContent = "";
+  }
+
   async function runTrends() {
     const ids = [...document.querySelectorAll("#try-vars input:checked")].map(i => i.value);
     if (!ids.length) { $("try-status").textContent = "Pick at least one variable."; return; }
@@ -109,9 +128,13 @@
     $("try-summary").innerHTML = ""; $("try-detail").innerHTML = "";
     $("try-results").hidden = true;
     $("try-run").disabled = true;
+    RUNNING = true; corrGate();
+    const state = Object.fromEntries(ids.map(v => [v, "waiting"]));
+    showProgress(ids, state);
     let shown = false;
     for (const [i, v] of ids.entries()) {
       const meta = VARS.find(x => x.id === v);
+      state[v] = "loading"; showProgress(ids, state);
       $("try-status").textContent = `${i + 1} of ${ids.length}: fetching ${meta.name} and testing the trend… ${meta.fast ? "(seconds to a minute)" : "(first time can take several minutes)"}`;
       try {
         const res = await fetch(`${API}/api/analyze?${qs()}&var=${v}`);
@@ -121,14 +144,19 @@
         addSummary(d);
         $("try-detail").insertAdjacentHTML("beforeend", `<option value="${v}">${d.variable.name}</option>`);
         if (!shown) { render(d); shown = true; }
+        state[v] = "done";
       } catch (err) {
+        state[v] = "failed";
         $("try-summary").insertAdjacentHTML("beforeend",
           `<div class="kpi"><div class="k-label">${meta.name}</div><div class="k-val">n/a</div><div class="k-note">Could not analyse here: ${err.message}</div></div>`);
       }
       $("try-results").hidden = false;
+      showProgress(ids, state);
     }
     $("try-status").textContent = `Done: ${Object.keys(RESULTS).length} of ${ids.length} variables.`;
     $("try-run").disabled = false;
+    RUNNING = false; corrGate();
+    setTimeout(() => { if (!RUNNING) $("try-progress-top").hidden = true; }, 4000);
   }
 
   function addSummary(d) {
@@ -235,8 +263,10 @@
   async function runCorr() {
     const ids = [...document.querySelectorAll("#try-corr-vars input:checked")].map(i => i.value);
     if (ids.length < 2) { $("try-corr-status").textContent = "Pick at least two variables."; return; }
-    $("try-corr-status").textContent = "Fetching each variable and running the correlation engine… (about a minute)";
+    if (RUNNING) { corrGate(); return; }
+    $("try-corr-status").textContent = `Fetching ${ids.length} variables and running the correlation engine… (about a minute)`;
     $("try-corr-run").disabled = true;
+    $("try-corr-progress").hidden = false;
     try {
       const res = await fetch(`${API}/api/correlate?${qs()}&vars=${ids.join(",")}&lag=3`);
       if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
@@ -245,6 +275,7 @@
       explain("links", cd, "try-corr-explain", "try-corr-explain-src");
       $("try-corr-status").textContent = "Done.";
     } catch (err) { $("try-corr-status").textContent = "Could not run: " + err.message; }
+    $("try-corr-progress").hidden = true;
     $("try-corr-run").disabled = false;
   }
 
