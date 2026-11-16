@@ -84,6 +84,16 @@ select { font: inherit; font-size: .95rem; text-transform: none; letter-spacing:
 .about li strong { color: var(--text); }
 .sources { padding-left: 18px; }
 
+/* About: plain-language intro + nav label */
+.about-intro { padding: 0 0 44px; margin-bottom: 8px; border-bottom: 1px solid var(--border); }
+.about-intro .lede { font-size: clamp(1.5rem, 3.2vw, 2.4rem); line-height: 1.12; letter-spacing: -0.025em; color: var(--text); max-width: 26ch; margin: 0 0 24px; }
+.about-intro p { color: var(--soft); max-width: 62ch; margin: 0 0 8px; font-size: 1.05rem; }
+.about-intro ul.intro-points { list-style: none; padding: 0; margin: 24px 0 0; display: grid; gap: 0; }
+.about-intro ul.intro-points li { border-top: 1px solid var(--border); padding: 18px 0; color: var(--soft); margin: 0; }
+.about-intro ul.intro-points li strong { color: var(--text); }
+.toc { align-items: baseline; }
+.toc-label { flex-basis: 100%; color: var(--muted); font-size: .7rem; letter-spacing: .14em; margin-bottom: -12px; }
+
 .site-footer { color: var(--muted); font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; padding: 48px 24px; border-top: 1px solid var(--border); }
 
 @media (max-width: 860px) {

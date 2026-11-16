@@ -269,7 +269,18 @@
     <!-- TAB 3: ABOUT -->
     <section id="panel-about" role="tabpanel" aria-labelledby="tab-about" hidden>
       <div class="about">
+        <article class="about-intro">
+          <p class="lede">Zenith measures how a place's NASA Earth-science records are changing &mdash; and how sure we can be that the change is real, not just year-to-year noise.</p>
+          <p>This page is the full method behind the tool: from raw satellite data, to the trend tests, to the plain-language verdicts, with every result checked against published science. The essentials first:</p>
+          <ul class="intro-points">
+            <li><strong>What it does.</strong> Fits a trend to monthly NASA data for any region, tests whether that trend is significant, and finds which variables move together.</li>
+            <li><strong>How to read a verdict.</strong> &ldquo;Clear rise/fall&rdquo; means the change beats normal year-to-year swings at 95% confidence. &ldquo;No clear trend yet&rdquo; means it is still within the noise &mdash; not the same as no trend.</li>
+            <li><strong>How far to trust it.</strong> 24 of 25 checks against published studies matched. The limits are spelled out under <a href="#guardrails">Guardrails</a>.</li>
+          </ul>
+        </article>
+
         <nav class="toc" aria-label="About sections">
+          <span class="toc-label">On this page</span>
           <a href="#methodology">Methodology</a>
           <a href="#engine">Correlation engine</a>
           <a href="#benchmarks">Benchmarks</a>
@@ -282,17 +293,14 @@
         <article id="methodology" class="card">
           <h2>Methodology</h2>
           <ol>
-            <li><strong>Regions.</strong> US Census 2024 state outlines. Each grid cell counts by the share of it inside the state, weighted by cos(latitude), like NASA Giovanni's shape masks. Alaska's outline is cut at 180&deg; (the far-western Aleutians are left out).</li>
-            <li><strong>Data.</strong> Monthly NASA products, fetched through NASA Earthdata (Harmony subsetting and Giovanni's averaging service):
-              air temperature (MERRA-2 M2TMNXSLV, 1980&ndash;2024), precipitation (GPM IMERG V07, 2001&ndash;2024),
-              aerosol optical depth (MODIS Aqua MYD08_M3, summers 2003&ndash;2024), total water storage (GRACE/GRACE-FO JPL mascons, 2003&ndash;2024),
-              soil moisture (GLDAS Noah 2.1, 2003&ndash;2024).</li>
-            <li><strong>Trend.</strong> A straight-line trend fitted together with the seasonal cycle on the real monthly calendar (gaps such as GRACE's 2017&ndash;18 gap stay gaps). For smoke, the trend of each summer's June&ndash;August average.</li>
-            <li><strong>Significance.</strong> Neighbouring months are not independent, so the test uses an effective number of months from the lag-1 autocorrelation (the adjustment IPCC AR6 uses, Santer et al. 2008). The 95% range and p-value come from that test.</li>
-            <li><strong>Verdict.</strong> &ldquo;Clear rise/fall&rdquo; needs p &lt; 0.05 <em>and</em> a robust Theil&ndash;Sen slope with the same correction pointing the same way. Otherwise &ldquo;no clear trend yet&rdquo;: the change so far is within normal year-to-year swings, so it could still be noise. That is not the same as &ldquo;no trend&rdquo;; a longer record may settle it.</li>
-            <li><strong>Explanations.</strong> The &ldquo;What this means&rdquo; text is written by an AI model from a fact sheet of the computed numbers. A checker rejects any number not in the results, causal claims (&ldquo;caused by&rdquo;, &ldquo;proves&rdquo;) and filler words; if a reply fails twice, a plain template sentence is shown instead.</li>
-            <li><strong>Units.</strong> Temperature in &deg;C per decade; precipitation and soil moisture as % of the state's average per decade; smoke in aerosol optical depth per decade; water storage in mm of water per year (and km&sup3;/yr for the whole state).</li>
-            <li><strong>Pipeline.</strong> <code>scripts/build_tool_data.py</code> in the earthpull project downloads, clips, averages and tests everything, then writes <code>data.js</code>. The site itself is static and does no processing.</li>
+            <li><strong>Regions.</strong> US Census 2024 state outlines. Each grid cell is weighted by its share inside the state and by cos(latitude), like NASA Giovanni's shape masks. Alaska's outline is cut at 180&deg;, dropping the far-western Aleutians.</li>
+            <li><strong>Data.</strong> Monthly NASA products, via NASA Earthdata (Harmony subsetting and Giovanni's averaging service): air temperature (MERRA-2 M2TMNXSLV, 1980&ndash;2024), precipitation (GPM IMERG V07, 2001&ndash;2024), aerosol optical depth (MODIS Aqua MYD08_M3, summers 2003&ndash;2024), total water storage (GRACE/GRACE-FO JPL mascons, 2003&ndash;2024) and soil moisture (GLDAS Noah 2.1, 2003&ndash;2024).</li>
+            <li><strong>Trend.</strong> A straight line fitted together with the seasonal cycle on the real monthly calendar, so gaps stay gaps (such as GRACE's 2017&ndash;18 gap). For smoke, the trend of each summer's June&ndash;August average.</li>
+            <li><strong>Significance.</strong> Neighbouring months are not independent, so the test uses an effective number of months from the lag-1 autocorrelation &mdash; the correction IPCC AR6 uses (Santer et al. 2008). The 95% range and p-value come from that test.</li>
+            <li><strong>Verdict.</strong> &ldquo;Clear rise/fall&rdquo; needs p &lt; 0.05 <em>and</em> a robust Theil&ndash;Sen slope (same correction) pointing the same way. Otherwise &ldquo;no clear trend yet&rdquo;: the change so far sits within normal year-to-year swings, so it may still be noise &mdash; which is not &ldquo;no trend&rdquo;. A longer record may settle it.</li>
+            <li><strong>Explanations.</strong> The &ldquo;What this means&rdquo; text is written by an AI model from a fact sheet of the computed numbers. A checker rejects any number not in the results, any causal claim (&ldquo;caused by&rdquo;, &ldquo;proves&rdquo;) and filler; if a reply fails twice, a plain template sentence is shown instead.</li>
+            <li><strong>Units.</strong> Temperature in &deg;C per decade; precipitation and soil moisture as % of the state's average per decade; smoke in aerosol optical depth per decade; water storage in mm/year (and km&sup3;/yr for the whole state).</li>
+            <li><strong>Pipeline.</strong> <code>scripts/build_tool_data.py</code> (in the earthpull project) downloads, clips, averages and tests everything, then writes <code>data.js</code>. The site itself is static and does no processing.</li>
           </ol>
         </article>
 
@@ -300,12 +308,12 @@
           <h2>Correlation engine</h2>
           <p class="sub">"What moves together here?" in the Try tab. No AI: fixed statistics and a fixed physics table. The strongest wording it uses is "consistent with A influencing B", never "causes".</p>
           <ol>
-            <li><strong>Clean-up.</strong> Each calendar month's normal value is removed (seasons), then each variable's trend is removed with the same fit as the trend test, so two variables that merely both drift are not called linked.</li>
-            <li><strong>Move together?</strong> Lagged correlation (0&ndash;3 months, either direction), with an effective sample size from each series' lag-1 autocorrelation (Bretherton et al. 1999), Benjamini&ndash;Hochberg false-discovery correction across all pairs and delays, and a surrogate test (phase-randomised series that keep each variable's own rhythm).</li>
+            <li><strong>Clean-up.</strong> Each calendar month's normal value is removed (seasons), then each variable's trend is removed with the same fit as the trend test &mdash; so two variables that merely both drift are not called linked.</li>
+            <li><strong>Move together?</strong> Lagged correlation (0&ndash;3 months, either direction), with an effective sample size from each series' lag-1 autocorrelation (Bretherton et al. 1999), a Benjamini&ndash;Hochberg false-discovery correction across all pairs and delays, and a surrogate test (phase-randomised series that keep each variable's own rhythm).</li>
             <li><strong>Not explained by the rest?</strong> Partial correlation, controlling for every other variable chosen.</li>
-            <li><strong>Timing.</strong> Granger causality test in both directions (does A's past help predict B?), used only to flag one-way timing.</li>
-            <li><strong>Physics.</strong> A fixed table of 26 known mechanisms (for example rain &rarr; soil moisture, warmer air &rarr; drier soil, snowfall &rarr; snow depth). Only listed pairs, with the expected sign and delay, reach the top verdict. "Same" pairs (two measures of one thing) should agree; "shared" pairs (common source) are never called a cause.</li>
-            <li><strong>Is a trend explained by another variable?</strong> The variable is refitted with the other one added (same memory-adjusted errors). If the other one has no significant effect of its own, or is itself just a steady trend with no known mechanism, the engine says the two "cannot be separated".</li>
+            <li><strong>Timing.</strong> A Granger causality test in both directions (does A's past help predict B?), used only to flag one-way timing.</li>
+            <li><strong>Physics.</strong> A fixed table of 26 known mechanisms (e.g. rain &rarr; soil moisture, warmer air &rarr; drier soil, snowfall &rarr; snow depth). Only listed pairs, with the expected sign and delay, reach the top verdict. "Same" pairs (two measures of one thing) should agree; "shared" pairs (a common source) are never called a cause.</li>
+            <li><strong>Is a trend explained by another variable?</strong> The variable is refitted with the other one added (same memory-adjusted errors). If the other has no significant effect of its own, or is itself just a steady trend with no known mechanism, the engine reports that the two "cannot be separated".</li>
           </ol>
         </article>
 
