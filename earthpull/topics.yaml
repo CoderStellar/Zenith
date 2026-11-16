@@ -4,14 +4,15 @@
 #       longterm = look at the trend over the whole record (slow changes like mining)
 
 # Headlines with any of these words are dropped for every topic (sports and other metaphors).
-_exclude_all: [quarterfinal, semifinal, playoff, championship, defeats, beats, baseball, football, basketball,
-  soccer, cricket, hockey, nfl, nba, mlb, acc, sec, coach, touchdown, tournament, box office, album, stock price,
-  stocks, shares, investors, earnings, ipo]
+_exclude_all: [quarterfinal, semifinal, playoff, playoffs, championship, defeats, beats, beating, baseball, football,
+  basketball, soccer, cricket, hockey, nfl, nba, mlb, ncaa, acc, sec, coach, touchdown, tournament, odds, offense,
+  offensive, scores, league, miami heat, pistons, box office, album, stock price, stocks, shares, investors, earnings,
+  ipo, sales, insurance, insurer, tips, fundraiser, raised, donations, recipe, horoscope]
 
 air_pollution:
   label: Air pollution, smoke, fireworks
   keywords: [diwali, firecracker, fireworks, smog, air quality, aqi, air pollution, stubble, crop burning, haze, pollution]
-  require_any: [smog, pollution, air quality, aqi, haze, smoke, toxic air, pm2.5, pm 2.5, firecracker, fireworks]
+  require_any: [smog, pollution, polluted, air quality, aqi, haze, smoke, toxic air, pm2.5, pm 2.5]
   exclude: []
   variables: [no2, aerosol]
   mode: event
@@ -19,14 +20,18 @@ air_pollution:
 wildfire:
   label: Wildfires
   keywords: [wildfire, bushfire, forest fire, blaze, burned area]
-  exclude: [ceasefire, fired, firing]
+  require_any: [wildfire, wildfires, bushfire, bushfires, forest fire, forest fires, brush fire, brushfire, grass fire,
+    acres, hectares, burned area, fire season, containment, contained, evacuation, evacuations, smoke]
+  exclude: [ceasefire, fired, firing, house fire, home fire, apartment, vacant]
   variables: [aerosol, ndvi, land_surface_temp]
   mode: event
 
 mining:
   label: Mining and land clearing
   keywords: [mining, mine, quarry, deforestation, logging, land clearing]
-  exclude: [bitcoin, crypto, data mining, mined data, minecraft, landmine, land mine, naval mine, sea mine,
+  require_any: [deforestation, deforested, forest, forests, rainforest, amazon, land clearing, clearing, logging, illegal mining,
+    open-pit, open pit, quarry, quarrying, expansion, tailings, mine waste]
+  exclude: [crash, crashes, road, street, logging devices, electronic logging, economy, economic, war, uranium, nuclear, deep-sea, deep sea, seabed, salt, bitcoin, crypto, data mining, mined data, minecraft, landmine, land mine, naval mine, sea mine,
     hitting mine, hit a mine, hitting a mine, mines in hormuz, tanker, mine-clearing, minesweep]
   variables: [ndvi, land_surface_temp, water_storage]
   mode: longterm
@@ -34,7 +39,9 @@ mining:
 drought:
   label: Drought and water shortage
   keywords: [drought, dry spell, water shortage, water crisis, groundwater, aquifer, crop failure]
-  exclude: []
+  require_any: [rain, rainfall, water, groundwater, aquifer, crop, crops, farmer, farmers, farm, farms, dry, reservoir,
+    reservoirs, wells, river, rivers, irrigation, harvest, livestock, wildfire, conditions, monitor]
+  exclude: [-year drought, -decade drought, decade drought, year drought, democrats, republicans, election, title drought]
   variables: [soil_moisture, precip, water_storage, ndvi]
   mode: longterm
 
@@ -48,20 +55,25 @@ flood:
 heat:
   label: Heat waves
   keywords: [heatwave, heat wave, heat dome, record heat, extreme heat, hottest]
-  exclude: []
+  require_any: [heatwave, heatwaves, heat wave, heat waves, heat dome, record heat, extreme heat, temperatures, temperature,
+    degrees, swelter, swelters, sweltering, scorching]
+  exclude: [adversity]
   variables: [air_temp, land_surface_temp, surface_air_temp_airs]
   mode: event
 
 ice:
   label: Ice and glaciers
   keywords: [glacier, ice sheet, sea ice, melting ice, permafrost, ice loss]
-  exclude: [cruise, cruises, national park lodge, glacier bay tours]
+  require_any: [melt, melts, melting, melted, retreat, retreating, shrink, shrinking, shrank, thaw, thawing, ice loss,
+    losing, collapse, collapsing, record low, warming, vanishing, disappearing]
+  exclude: [initiative, cruise, cruises, national park lodge, glacier bay tours]
   variables: [water_storage, air_temp]
   mode: longterm
 
 volcano:
   label: Volcanic eruptions
   keywords: [volcano, eruption, ash cloud, lava]
-  exclude: [volcano vista, volcanoes national park lodge]
+  require_any: [volcano, volcanoes, volcanic, lava flow, lava flows, ash plume, ash cloud, kilauea, etna, mauna loa]
+  exclude: [facts, history, how often, volcano vista, volcanoes national park lodge]
   variables: [aerosol, no2]
   mode: event

@@ -398,6 +398,8 @@ def latest_environment_news(days: int = 7, per_topic: int = 60) -> pd.DataFrame:
         for r in df.itertuples():
             if tid not in match_topics(r.title):
                 continue
+            if tp.get("mode") == "event" and OLD_YEAR.search(r.title):
+                continue  # "Volcano - Pinatubo, 1991": a past event, not news
             pl = find_places([r.title])
             if pl.empty:
                 continue
@@ -409,4 +411,15 @@ def latest_environment_news(days: int = 7, per_topic: int = 60) -> pd.DataFrame:
     out = pd.DataFrame(rows)
     if out.empty:
         return out
-    return out.drop_duplicates("title").sort_values("date", ascending=False, ignore_index=True)
+    out = out.drop_duplicates("title").sort_values("date", ascending=False, ignore_index=True)
+    # Keep the list varied: at most MAX_PER_PLACE stories per place and MAX_PER_TOPIC per topic (newest first),
+    # then interleave topics so one busy topic (say, a week of floods) cannot fill the panel.
+    out = out[out.groupby("place").cumcount() < MAX_PER_PLACE]
+    out = out[out.groupby("topic").cumcount() < MAX_PER_TOPIC]
+    out = out.assign(_r=out.groupby("topic").cumcount()).sort_values(["_r", "date"], ascending=[True, False])
+    return out.drop(columns="_r").reset_index(drop=True)
+
+
+MAX_PER_TOPIC = 6
+OLD_YEAR = re.compile(r"\b(1[6-9]\d\d|20[01]\d|202[0-3])\b")
+MAX_PER_PLACE = 2
