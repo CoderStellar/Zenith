@@ -77,7 +77,7 @@ select { font: inherit; font-size: .95rem; text-transform: none; letter-spacing:
 .detail td:last-child { text-align: right; font-weight: 600; }
 
 /* About */
-.about { display: grid; gap: 0; max-width: 960px; margin: 0 auto; padding: 48px 24px; }
+.about { display: grid; gap: 0; padding: 48px 24px; }
 .toc { margin-bottom: 44px; }
 .about .card { border-right: 0; padding: 48px 0; }
 .about li { margin-bottom: 10px; color: var(--soft); }
